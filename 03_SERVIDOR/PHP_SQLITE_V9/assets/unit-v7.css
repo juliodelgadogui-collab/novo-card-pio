@@ -1,0 +1,17 @@
+/* EventMenu Experience v7 — selecao publica de unidade */
+body{background:radial-gradient(circle at 95% -15%,color-mix(in srgb,var(--primary) 11%,var(--bg)),transparent 50%),var(--bg)}
+.shell{max-width:880px;padding:44px 22px 86px}
+.brand{gap:14px;margin-bottom:64px}
+.logo{width:60px;height:60px;border-radius:19px;box-shadow:0 10px 28px color-mix(in srgb,var(--primary) 19%,transparent)}
+.brand strong{font-size:17px;letter-spacing:-.035em}.brand small{font-size:12px}
+.eyebrow{letter-spacing:.17em;font-size:11px}
+h1{font-size:clamp(42px,6.8vw,66px);font-weight:880;letter-spacing:-.065em;line-height:1.04;margin:13px 0 16px}
+p{max-width:590px;font-size:15px;line-height:1.7}
+.units{gap:13px;margin-top:35px}
+.unit{padding:23px 25px;border-radius:19px;border:1px solid color-mix(in srgb,var(--text) 9%,var(--surface));box-shadow:0 9px 35px rgba(30,23,59,.045);gap:12px;transition:transform .18s,border-color .18s,box-shadow .18s}
+.unit:hover,.unit:focus-visible{transform:translateY(-3px);border-color:color-mix(in srgb,var(--primary) 38%,transparent);box-shadow:0 17px 38px rgba(30,23,59,.1)}
+.unit strong{font-size:18px;font-weight:820;letter-spacing:-.025em}
+.unit span{line-height:1.5;font-size:12px}
+.go{padding:12px 17px;border-radius:12px;font-size:12px}
+a:focus-visible{outline:3px solid color-mix(in srgb,var(--primary) 40%,transparent);outline-offset:2px}
+@media(max-width:600px){.shell{padding:26px 16px 60px}.brand{margin-bottom:52px}.unit{padding:20px 18px}.go{white-space:nowrap;padding:10px 12px}}

@@ -1,0 +1,39 @@
+/* CARDÁPIO / EVENTMENU — WORKSPACE AUTH V8 */
+body.auth-v2.auth-v8{--color-primary:#17684f;--color-primary-hover:#11573e;--color-bg:#edf2ee;--color-text-main:#203930;--color-text-muted:#788880;background:#eef2ed!important;font-family:'Segoe UI',Inter,ui-sans-serif,system-ui,-apple-system,sans-serif}
+body.auth-v8 .auth-shell{display:grid!important;grid-template-columns:minmax(0,1.08fr) minmax(420px,.92fr)!important;min-height:100dvh!important;padding:0!important;align-items:stretch!important;justify-content:stretch!important;gap:0!important}
+body.auth-v8 .auth-showcase{display:flex!important;position:relative!important;isolation:isolate;flex-direction:column;justify-content:space-between;min-height:100dvh;background:#142f29!important;color:#fff!important;padding:clamp(34px,5vw,82px)!important;overflow:hidden}
+body.auth-v8 .auth-showcase:before{content:"";position:absolute;inset:13% -45% auto auto;width:88%;aspect-ratio:1;border-radius:50%;border:1px solid rgba(216,245,224,.19);box-shadow:0 0 0 82px rgba(198,241,202,.035),0 0 0 173px rgba(198,241,202,.025);z-index:-1}
+body.auth-v8 .auth-showcase:after{content:"WORKSPACE";font-size:clamp(110px,13vw,230px);line-height:1;letter-spacing:-.08em;font-weight:900;color:rgba(213,245,221,.045);position:absolute;bottom:18%;left:-5%;z-index:-1;transform:rotate(-90deg);transform-origin:left bottom}
+body.auth-v8 .auth-brandline{display:flex;align-items:center;gap:13px;font-weight:850;font-size:22px!important;letter-spacing:-.05em!important;color:#fff!important}
+body.auth-v8 .auth-brandline small{font-size:11px!important;letter-spacing:.15em!important;text-transform:uppercase;color:#a9c8ad!important}
+body.auth-v8 .auth-brandmark{display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;border-radius:11px;background:#c3e6b8!important;color:#194e35!important;box-shadow:none!important;font-weight:900}
+body.auth-v8 .auth-pitch{position:relative;margin:30px 0;max-width:700px}
+body.auth-v8 .auth-kicker{color:#afe0ba!important;font-size:10px!important;letter-spacing:.17em!important;font-weight:800!important}
+body.auth-v8 .auth-pitch h1{max-width:590px;font-size:clamp(41px,5.2vw,78px)!important;line-height:1.02!important;letter-spacing:-.065em!important;font-weight:850!important;color:#fff!important;margin:18px 0 22px!important}
+body.auth-v8 .auth-pitch p{max-width:520px;color:#bbd4c8!important;font-size:15px!important;line-height:1.7!important}
+body.auth-v8 .auth-benefits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:34px!important}
+body.auth-v8 .auth-benefit{border:1px solid #35584a;background:#254339!important;border-radius:9px!important;box-shadow:none!important;padding:15px!important}
+body.auth-v8 .auth-benefit strong{display:block;font-size:12px!important;color:#f0f9ee!important;font-weight:800}
+body.auth-v8 .auth-benefit span{display:block;color:#acc7b7!important;font-size:11px!important;line-height:1.5!important;margin-top:7px!important}
+body.auth-v8 .auth-showcase-foot{color:#90b7a1!important;font-size:10px!important;font-weight:700;letter-spacing:.12em}
+body.auth-v8 .auth-main{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;max-width:none!important;padding:40px clamp(24px,6vw,95px)!important;background:#f3f6f2!important}
+body.auth-v8 .auth-panel{width:min(440px,100%)!important;max-width:440px!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important}
+body.auth-v8 .auth-mobile-brand{display:none!important}
+body.auth-v8 .auth-panel-head{text-align:left!important;margin-bottom:32px!important}
+body.auth-v8 .auth-panel-head:before{content:"ACESSO AO WORKSPACE";display:block;color:#48836a;font-size:10px;letter-spacing:.17em;font-weight:850;margin-bottom:16px}
+body.auth-v8 .auth-panel-head h2{font-size:clamp(32px,3.5vw,44px)!important;letter-spacing:-.06em!important;font-weight:850!important;color:#193d30!important;margin:0 0 9px!important}
+body.auth-v8 .auth-panel-head p{font-size:13px!important;color:#85938b!important;line-height:1.5!important}
+body.auth-v8 .auth-form{gap:19px!important}
+body.auth-v8 .auth-field>span:first-child{font-size:12px!important;color:#385449!important;font-weight:800!important;margin-bottom:8px!important}
+body.auth-v8 .auth-input-wrap input{min-height:53px!important;padding:12px 15px!important;background:#fff!important;color:#274236!important;border:1px solid #d5e1d9!important;border-radius:9px!important;box-shadow:none!important;font-size:14px!important}
+body.auth-v8 .auth-input-wrap input:focus{border-color:#71a990!important;box-shadow:0 0 0 3px rgba(33,132,98,.1)!important}
+body.auth-v8 .auth-link{color:#2c7758!important;font-size:12px!important;font-weight:730!important}
+body.auth-v8 .auth-submit{min-height:54px!important;border-radius:9px!important;background:#1e6b4f!important;color:#fff!important;font-size:13px!important;font-weight:850!important;box-shadow:none!important;border:0!important}
+body.auth-v8 .auth-submit:hover{background:#11593e!important}
+body.auth-v8 .auth-help{margin-top:32px!important;padding-top:18px!important;border-top:1px solid #dce6db!important;color:#8b9a8f!important;font-size:11px!important;line-height:1.7!important}
+body.auth-v8 .auth-help strong{color:#415e4c!important}
+body.auth-v8 .password-toggle{color:#2f765b!important;font-weight:700!important}
+body.auth-v8 .auth-alert{border-radius:9px!important}
+@media(max-width:1080px){body.auth-v8 .auth-showcase{padding:40px!important}body.auth-v8 .auth-pitch h1{font-size:49px!important}body.auth-v8 .auth-benefits{grid-template-columns:1fr!important}body.auth-v8 .auth-benefit{display:flex;gap:8px;align-items:baseline}body.auth-v8 .auth-main{padding:40px!important}}
+@media(max-width:850px){body.auth-v8 .auth-shell{display:block!important}body.auth-v8 .auth-showcase{display:none!important}body.auth-v8 .auth-main{min-height:100dvh;padding:38px 25px!important}body.auth-v8 .auth-panel{background:transparent!important;max-width:460px!important;margin:auto}body.auth-v8 .auth-mobile-brand{display:flex!important;justify-content:flex-start!important;color:#14382a!important;margin:0 0 55px!important}}
+@media(max-width:480px){body.auth-v8 .auth-main{background:#f7f9f5!important;padding:27px 24px!important;align-items:flex-start!important}body.auth-v8 .auth-panel-head h2{font-size:36px!important}body.auth-v8 .auth-mobile-brand{margin-bottom:65px!important}body.auth-v8 .auth-panel{min-height:0!important}body.auth-v8 .auth-help{font-size:10px!important}}

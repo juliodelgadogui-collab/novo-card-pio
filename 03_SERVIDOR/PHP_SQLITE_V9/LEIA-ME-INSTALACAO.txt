@@ -1,0 +1,72 @@
+EVENTMENU PREMIUM — PRIMEIRA INSTALAÇÃO /1 — SQLITE
+
+Este pacote foi gerado do HEAD atual do GitHub e foi preparado para um servidor totalmente vazio.
+O Composer NÃO precisa estar instalado no servidor: a pasta vendor já acompanha o pacote.
+
+REQUISITOS DO SERVIDOR
+- PHP 8.2 ou superior.
+- Extensões: PDO, pdo_sqlite, mbstring, curl e openssl.
+- HTTPS recomendado desde a primeira instalação.
+- Apache/LiteSpeed com .htaccess habilitado, ou regras equivalentes no Nginx.
+- Permissão de escrita para a pasta do sistema durante a instalação e para storage depois.
+- WhatsApp: NÃO requer Node.js, WPPConnect, Chrome/Chromium ou Baileys na hospedagem.
+
+INSTALAÇÃO DO ZERO
+1. Crie/abra a pasta /1 no domínio.
+2. Envie TODO o conteúdo deste pacote para essa pasta.
+3. NÃO crie banco de dados manualmente.
+4. NÃO é obrigatório renomear .env.example: se .env não existir, o instalador cria automaticamente.
+5. Acesse https://SEU-DOMINIO/1/install.php.
+6. Confira se todos os requisitos aparecem com ✅.
+7. Informe a URL, empresa inicial e os dados do Super ADM.
+8. Clique em "Instalar EventMenu com SQLite".
+9. O sistema criará automaticamente:
+   - .env com APP_KEY e CRON_SECRET aleatórios;
+   - storage/eventmenu.sqlite;
+   - schema e migrações atuais;
+   - empresa inicial;
+   - usuário Super ADM;
+   - storage/installed.lock para bloquear nova instalação.
+10. Entre em https://SEU-DOMINIO/1/.
+11. Configure o cron do servidor para executar a cada minuto:
+
+   * * * * * php /CAMINHO/DO/SITE/1/cron.php >/dev/null 2>&1
+
+12. Entre como Super ADM, abra "Saúde do sistema" e confirme que Cron e Worker aparecem como OK.
+
+WHATSAPP / EVENTMENU CONNECT
+- O servidor NÃO executa Node.js, WPPConnect ou Baileys.
+- Instale e configure o aplicativo EventMenu Connect no aparelho responsável.
+- Pareamento, sessão, reconexão e envio real do WhatsApp acontecem dentro do EventMenu Connect.
+- O servidor mantém somente filas, conversas, automações, leases e ACKs consumidos pela API do Connect.
+- No painel do EventMenu, abra Configurações > WhatsApp para ativar automações e acompanhar o estado do Connect.
+- Use a Central de Atendimento para conversas humanas. O navegador nunca acessa diretamente o Baileys.
+
+CRON / MANUTENÇÃO AUTOMÁTICA
+- O cron é obrigatório em produção e deve executar a cada minuto.
+- Ele processa filas assíncronas, notificações push, expirações, limpezas e o agendamento do backup automático.
+- O envio de WhatsApp NÃO é executado pelo cron: o EventMenu Connect consome a fila pela API autenticada.
+- Prefira a execução CLI acima: ela NÃO precisa expor o CRON_SECRET.
+- Se o seu provedor só aceitar chamada HTTP, o endpoint cron.php exige o cabeçalho X-Cron-Secret com o valor protegido do .env.
+- O painel Super ADM > Saúde do sistema mostra o caminho real do cron.php e informa se Cron/Worker estão atrasados.
+
+BANCO INICIAL
+- Banco: SQLite.
+- Arquivo: storage/eventmenu.sqlite.
+- WAL e foreign keys são ativados automaticamente.
+- Nunca disponibilize storage publicamente.
+- Faça backup periódico do banco antes de atualizações importantes.
+
+ATUALIZAÇÕES
+- Envie os novos arquivos preservando .env e toda a pasta storage.
+- Entre como administrador autorizado e acesse /1/update.php para aplicar migrações.
+- NUNCA substitua storage/eventmenu.sqlite por um arquivo vazio durante atualização.
+
+SEGURANÇA
+- O .htaccess do pacote bloqueia .env, app, src, database, storage, vendor e public em Apache/LiteSpeed.
+- Em Nginx, replique esses bloqueios no virtual host.
+- SESSION_SECURE é ativado automaticamente quando a URL informada usa HTTPS.
+- Depois de instalado, install.php é bloqueado por installed.lock e pela existência do Super ADM.
+
+MIGRAÇÃO FUTURA PARA MYSQL/MARIADB
+O sistema mantém suporte a MySQL/MariaDB, mas a primeira instalação deste pacote usa SQLite conforme definido para a fase inicial do projeto.

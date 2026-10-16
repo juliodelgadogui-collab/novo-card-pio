@@ -1,0 +1,45 @@
+<?php
+
+declare(strict_types=1);
+
+namespace EventMenu\Services;
+
+use EventMenu\Core\Database;
+
+final class MaintenanceService
+{
+    public function run():array
+    {
+        $pdo=Database::connection();$result=[];$runtime=new RuntimeStatusService();
+        $result['released_ticket_reservations']=(new TicketService())->releaseExpired();
+        $result['released_stock_reservations']=(new StockReservationService())->releaseExpired();
+
+        $stmt=$pdo->prepare('UPDATE nfc_payment_intents SET status="expired" WHERE status="created" AND expires_at<CURRENT_TIMESTAMP');
+        $stmt->execute();$result['expired_nfc_intents']=$stmt->rowCount();
+
+        $stmt=$pdo->prepare('UPDATE api_tokens SET revoked_at=CURRENT_TIMESTAMP WHERE revoked_at IS NULL AND expires_at<CURRENT_TIMESTAMP');
+        $stmt->execute();$result['expired_api_tokens']=$stmt->rowCount();
+
+        try{$stmt=$pdo->prepare('UPDATE api_refresh_tokens SET revoked_at=CURRENT_TIMESTAMP WHERE revoked_at IS NULL AND expires_at<CURRENT_TIMESTAMP');$stmt->execute();$result['expired_api_refresh_tokens']=$stmt->rowCount();}catch(\Throwable){$result['expired_api_refresh_tokens']=0;}
+        try{$stmt=$pdo->prepare('UPDATE events SET status="closed" WHERE status="published" AND ends_at IS NOT NULL AND ends_at<CURRENT_TIMESTAMP');$stmt->execute();$result['closed_events']=$stmt->rowCount();}catch(\Throwable){$result['closed_events']=0;}
+        try{(new LoginThrottleService())->cleanup();$result['login_throttle_cleanup']=true;}catch(\Throwable){$result['login_throttle_cleanup']=false;}
+        try{$result['api_rate_limits_removed']=(new ApiRateLimitService())->cleanup();}catch(\Throwable){$result['api_rate_limits_removed']=0;}
+        try{$result['password_reset_tokens_removed']=(new PasswordResetService())->cleanup();}catch(\Throwable){$result['password_reset_tokens_removed']=0;}
+        try{$stmt=$pdo->prepare('DELETE FROM app_notifications WHERE expires_at IS NOT NULL AND expires_at<=CURRENT_TIMESTAMP');$stmt->execute();$result['expired_notifications_removed']=$stmt->rowCount();}catch(\Throwable){$result['expired_notifications_removed']=0;}
+        try{$result['delivery_location_history_removed']=(new DeliveryLocationService())->purgeHistory();}catch(\Throwable){$result['delivery_location_history_removed']=0;}
+        try{$stmt=$pdo->prepare('DELETE FROM delivery_tracking_links WHERE expires_at<CURRENT_TIMESTAMP');$stmt->execute();$result['expired_delivery_tracking_links_removed']=$stmt->rowCount();}catch(\Throwable){$result['expired_delivery_tracking_links_removed']=0;}
+        try{$stmt=$pdo->prepare('DELETE FROM delivery_customer_auth_tokens WHERE expires_at<CURRENT_TIMESTAMP OR used_at IS NOT NULL');$stmt->execute();$result['expired_delivery_customer_tokens_removed']=$stmt->rowCount();}catch(\Throwable){$result['expired_delivery_customer_tokens_removed']=0;}
+        try{$stmt=$pdo->prepare('UPDATE delivery_customer_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE revoked_at IS NULL AND expires_at<CURRENT_TIMESTAMP');$stmt->execute();$result['expired_delivery_customer_sessions']=$stmt->rowCount();}catch(\Throwable){$result['expired_delivery_customer_sessions']=0;}
+        try{$result['bank_pix_reconciliation']=(new BankPixProviderService())->reconcilePending($pdo,max(1,min(100,(int)env('BANK_PIX_RECONCILE_BATCH',40))));}catch(\Throwable$e){$result['bank_pix_reconciliation']=['error'=>mb_substr($e->getMessage(),0,240)];}
+        try{$whatsapp=new WhatsAppIntegrationService();$result['whatsapp_payment_events']=$whatsapp->syncPaymentEvents($pdo,max(1,min(500,(int)env('WHATSAPP_EVENT_SYNC_BATCH',100))));$result['whatsapp_delivery']='eventmenu_connect_only';}catch(\Throwable$e){$result['whatsapp_payment_events']=['error'=>mb_substr($e->getMessage(),0,240)];}
+        try{$result['whatsapp_abandoned_carts']=(new WhatsAppCommerceConversionService())->recoverAbandonedCarts($pdo,max(1,min(500,(int)env('WHATSAPP_ABANDONED_CART_BATCH',100))));}catch(\Throwable$e){$result['whatsapp_abandoned_carts']=['error'=>mb_substr($e->getMessage(),0,240)];}
+
+        try{if(Database::isSqlite($pdo))$pdo->exec("DELETE FROM api_tokens WHERE revoked_at IS NOT NULL AND revoked_at < datetime('now','-90 days')");else$pdo->exec('DELETE FROM api_tokens WHERE revoked_at IS NOT NULL AND revoked_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 90 DAY)');$result['old_api_tokens_removed']=true;}catch(\Throwable){$result['old_api_tokens_removed']=false;}
+        try{if(Database::isSqlite($pdo))$pdo->exec("DELETE FROM api_refresh_tokens WHERE revoked_at IS NOT NULL AND revoked_at < datetime('now','-90 days')");else$pdo->exec('DELETE FROM api_refresh_tokens WHERE revoked_at IS NOT NULL AND revoked_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 90 DAY)');$result['old_api_refresh_tokens_removed']=true;}catch(\Throwable){$result['old_api_refresh_tokens_removed']=false;}
+        try{if(Database::isSqlite($pdo))$pdo->exec("DELETE FROM delivery_customer_sessions WHERE revoked_at IS NOT NULL AND revoked_at < datetime('now','-90 days')");else$pdo->exec('DELETE FROM delivery_customer_sessions WHERE revoked_at IS NOT NULL AND revoked_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 90 DAY)');$result['old_delivery_customer_sessions_removed']=true;}catch(\Throwable){$result['old_delivery_customer_sessions_removed']=false;}
+
+        try{$jobs=new BackgroundJobService();$jobs->enqueue('backup.daily',[],null,'backup:'.gmdate('Y-m-d'),null,2);$result['jobs']=$jobs->runBatch(max(1,(int)env('QUEUE_BATCH_SIZE',40)),'cron');$result['job_cleanup']=$jobs->purge();}catch(\Throwable$e){$result['jobs']=['error'=>mb_substr($e->getMessage(),0,300)];}
+        $runtime->set('cron.last_run',isset($result['jobs']['error'])?'warning':'ok','Manutenção executada.',['result'=>$result]);
+        return$result;
+    }
+}

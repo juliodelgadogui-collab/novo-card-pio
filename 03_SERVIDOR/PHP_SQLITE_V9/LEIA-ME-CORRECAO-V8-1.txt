@@ -1,0 +1,22 @@
+EVENTMENU / CARDÁPIO — CORREÇÃO RESPONSIVA V8.1
+
+POR QUE FOI FEITA
+- Corrige conflito de CSS entre Super ADM antigo e layout V8.
+- Menu móvel deixa de cobrir 100% da largura e passa a ter máscara de fundo.
+- Retira o círculo do banner que sobrepunha o texto.
+- Aumenta a legibilidade de indicadores e cartões do Super ADM.
+- Corrige a organização para aparelhos touch e larguras intermediárias.
+
+ATUALIZAÇÃO EM SERVIDOR EXISTENTE
+1. Faça backup integral dos arquivos antes de atualizar.
+2. Descompacte o ZIP de ATUALIZAÇÃO na mesma pasta da aplicação (ex.: public_html/1/), mantendo caminhos.
+3. Não exclua nem sobrescreva o banco SQLite, storage/ ou arquivo .env.
+4. Recarregue a página e confira o menu, os cards e formulários de Super ADM.
+5. No Chrome para Android, deixe desmarcada a opção "Para computador" para usar a viewport real do celular.
+6. Se ainda abrir estilo antigo, feche e reabra a aba; limpe cache do site somente se necessário.
+
+ESCOPO
+Correção de CSS, vínculo da folha de estilos e versão do service worker; não altera operações do banco, endpoints, lógica ou estrutura comercial.
+
+TESTES
+Sintaxe PHP, validação CSS, integridade ZIP e smoke test visual local. NÃO é homologação em hospedagem real.

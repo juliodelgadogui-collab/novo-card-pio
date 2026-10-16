@@ -1,0 +1,26 @@
+{
+  "name": "eventmenu/premium",
+  "description": "EventMenu Premium - eventos, cardápio, delivery e pagamentos multiempresa",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": "^8.2",
+    "ext-curl": "*",
+    "ext-mbstring": "*",
+    "ext-openssl": "*",
+    "ext-pdo": "*",
+    "ext-simplexml": "*",
+    "stripe/stripe-php": "^18.0",
+    "mercadopago/dx-php": "^3.8",
+    "endroid/qr-code": "^6.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "EventMenu\\": "src/"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  }
+}

@@ -1,0 +1,202 @@
+<?php
+
+declare(strict_types=1);
+
+namespace EventMenu\Services;
+
+use EventMenu\Core\Auth;
+use EventMenu\Core\Database;
+use PDO;
+use RuntimeException;
+
+final class PaymentService
+{
+    private const PROVIDERS=['stripe','pagbank','mercadopago','efi','inter','manual','tef'];
+
+    public function create(int $orderId,string $provider,string $idempotencyKey,?int $amountCents=null):array
+    {
+        Auth::requirePermission('payments.manage');
+        $tenantId=Auth::tenantId();$provider=strtolower(trim($provider));
+        if(!$tenantId||!in_array($provider,self::PROVIDERS,true))throw new RuntimeException('Empresa ou provedor inválido.');
+        if(strlen($idempotencyKey)<12)throw new RuntimeException('Chave de idempotência inválida.');
+        return Database::transaction(function(PDO $pdo)use($tenantId,$orderId,$provider,$idempotencyKey,$amountCents):array{
+            $stmt=$pdo->prepare(Database::portableSql($pdo,'SELECT * FROM orders WHERE id=? AND tenant_id=? FOR UPDATE'));$stmt->execute([$orderId,$tenantId]);$order=$stmt->fetch();
+            if(!$order)throw new RuntimeException('Pedido não encontrado.');
+            if(in_array($order['status'],['cancelled','completed'],true))throw new RuntimeException('Pedido cancelado ou finalizado não pode receber nova cobrança.');
+            $existing=$pdo->prepare('SELECT * FROM payments WHERE tenant_id=? AND idempotency_key=? LIMIT 1');$existing->execute([$tenantId,$idempotencyKey]);if($payment=$existing->fetch())return $payment;
+            $paid=$this->paidAmount($pdo,$tenantId,$orderId);$remaining=max(0,(int)$order['total_cents']-$paid);
+            if($remaining<=0||$order['payment_status']==='paid')throw new RuntimeException('Pedido já está integralmente pago.');
+            $amount=$amountCents??$remaining;if($amount<=0||$amount>$remaining)throw new RuntimeException('Valor da parcela inválido. Saldo restante: R$ '.number_format($remaining/100,2,',','.').'.');
+            if(!in_array($provider,['manual','tef'],true)){$gw=$pdo->prepare('SELECT id FROM payment_gateways WHERE tenant_id=? AND provider=? AND active=1');$gw->execute([$tenantId,$provider]);if(!$gw->fetchColumn())throw new RuntimeException('Gateway não está ativo para esta empresa.');}
+            $open=$pdo->prepare(Database::portableSql($pdo,'SELECT * FROM payments WHERE tenant_id=? AND order_id=? AND status IN ("created","pending","authorized") ORDER BY id DESC LIMIT 1 FOR UPDATE'));$open->execute([$tenantId,$orderId]);if($payment=$open->fetch())return $payment;
+            $stmt=$pdo->prepare('INSERT INTO payments (tenant_id,order_id,provider,idempotency_key,amount_cents,currency,status) VALUES (?,?,?,?,?,"BRL","created")');$stmt->execute([$tenantId,$orderId,$provider,$idempotencyKey,$amount]);$id=(int)$pdo->lastInsertId();
+            $pdo->prepare('UPDATE orders SET payment_status="pending" WHERE id=? AND tenant_id=? AND payment_status<>"paid"')->execute([$orderId,$tenantId]);
+            Auth::audit('payment.created','payment',(string)$id,['order_id'=>$orderId,'provider'=>$provider,'amount_cents'=>$amount,'remaining_before_cents'=>$remaining]);
+            return ['id'=>$id,'order_id'=>$orderId,'amount_cents'=>$amount,'remaining_before_cents'=>$remaining,'status'=>'created'];
+        });
+    }
+
+    public function remaining(int $orderId,?int $tenantId=null):array
+    {
+        $tenantId??=Auth::tenantId();if(!$tenantId)throw new RuntimeException('Empresa inválida.');$pdo=Database::connection();
+        $o=$pdo->prepare('SELECT id,total_cents,payment_status FROM orders WHERE id=? AND tenant_id=?');$o->execute([$orderId,$tenantId]);$order=$o->fetch();if(!$order)throw new RuntimeException('Pedido não encontrado.');
+        $paid=$this->paidAmount($pdo,$tenantId,$orderId);$remaining=max(0,(int)$order['total_cents']-$paid);
+        return ['order_id'=>$orderId,'total_cents'=>(int)$order['total_cents'],'paid_cents'=>$paid,'remaining_cents'=>$remaining,'payment_status'=>(string)$order['payment_status']];
+    }
+
+    public function confirmVerified(array $verified):void
+    {
+        foreach(['tenant_id','order_id','provider','provider_payment_id','amount_cents','currency','account_reference']as$key)if(!array_key_exists($key,$verified))throw new RuntimeException("Campo ausente: {$key}");
+        $verified['provider']=strtolower((string)$verified['provider']);$customerConfirmed=false;$lateRefundRequired=false;
+
+        Database::transaction(function(PDO $pdo)use($verified,&$customerConfirmed,&$lateRefundRequired):void{
+            $tenantId=(int)$verified['tenant_id'];$orderId=(int)$verified['order_id'];$provider=(string)$verified['provider'];
+            if(!in_array($provider,self::PROVIDERS,true))throw new RuntimeException('Provedor inválido.');
+            $stmt=$pdo->prepare(Database::portableSql($pdo,'SELECT * FROM orders WHERE id=? AND tenant_id=? FOR UPDATE'));$stmt->execute([$orderId,$tenantId]);$order=$stmt->fetch();if(!$order)throw new RuntimeException('Pedido inválido.');
+            if(strtoupper((string)$verified['currency'])!=='BRL')throw new RuntimeException('Moeda divergente.');
+
+            if(!in_array($provider,['manual','tef'],true)){
+                $gw=$pdo->prepare(Database::portableSql($pdo,'SELECT account_reference FROM payment_gateways WHERE tenant_id=? AND provider=? AND active=1 FOR UPDATE'));$gw->execute([$tenantId,$provider]);$account=$gw->fetchColumn();
+                if($account===false)throw new RuntimeException('Gateway local não está ativo.');if((string)$account!==(string)$verified['account_reference'])throw new RuntimeException('Conta do recebedor divergente.');
+            }
+
+            $payment=$this->findLocalPayment($pdo,$tenantId,$orderId,$provider,$verified);if(!$payment)throw new RuntimeException('Cobrança local não encontrada.');
+            if(in_array($payment['status'],['paid','duplicate_paid','refunded'],true))return;
+            if((int)$payment['amount_cents']!==(int)$verified['amount_cents']||strtoupper((string)$payment['currency'])!=='BRL')throw new RuntimeException('Valor da parcela divergente.');
+            $dupe=$pdo->prepare('SELECT id FROM payments WHERE provider=? AND provider_payment_id=? AND id<>? LIMIT 1');$dupe->execute([$provider,(string)$verified['provider_payment_id'],$payment['id']]);if($dupe->fetchColumn())throw new RuntimeException('Transação do provedor já vinculada a outra cobrança.');
+
+            $lateEvent=(string)$order['channel']==='event'&&(string)$order['status']==='cancelled';
+            if(!$lateEvent&&in_array($order['status'],['cancelled','completed'],true))throw new RuntimeException('Pedido cancelado ou finalizado não pode ser confirmado.');
+
+            $paidBefore=$this->paidAmount($pdo,$tenantId,$orderId,(int)$payment['id']);$paidAfter=$paidBefore+(int)$payment['amount_cents'];$total=(int)$order['total_cents'];
+            if($paidAfter>$total||(!$lateEvent&&$order['payment_status']==='paid')){
+                $payload=$verified;$payload['duplicate_reason']='order_already_settled_or_overpaid';$payload['paid_before_cents']=$paidBefore;$payload['order_total_cents']=$total;
+                $pdo->prepare('UPDATE payments SET provider_payment_id=?,status="duplicate_paid",verified_at=CURRENT_TIMESTAMP,raw_payload=? WHERE id=? AND tenant_id=?')->execute([(string)$verified['provider_payment_id'],json_encode($payload,JSON_UNESCAPED_UNICODE),$payment['id'],$tenantId]);
+                Auth::audit('payment.duplicate_paid','payment',(string)$payment['id'],['order_id'=>$orderId,'provider'=>$provider,'paid_before_cents'=>$paidBefore,'attempted_cents'=>(int)$payment['amount_cents']]);return;
+            }
+
+            $pdo->prepare('UPDATE payments SET provider_payment_id=?,status="paid",verified_at=CURRENT_TIMESTAMP,raw_payload=? WHERE id=? AND tenant_id=?')->execute([(string)$verified['provider_payment_id'],json_encode($verified,JSON_UNESCAPED_UNICODE),$payment['id'],$tenantId]);
+            if($paidAfter<$total){
+                $pdo->prepare('UPDATE orders SET payment_status="pending" WHERE id=? AND tenant_id=?')->execute([$orderId,$tenantId]);
+                Auth::audit('payment.partial_confirmed','payment',(string)$payment['id'],['order_id'=>$orderId,'paid_cents'=>$paidAfter,'remaining_cents'=>$total-$paidAfter]);
+                if($lateEvent)$lateRefundRequired=true;
+                return;
+            }
+
+            if($lateEvent){
+                if($this->restoreExpiredEventTickets($pdo,$tenantId,$orderId)){
+                    $pdo->prepare('UPDATE orders SET payment_status="paid",status="confirmed" WHERE id=? AND tenant_id=?')->execute([$orderId,$tenantId]);
+                    $order['payment_status']='paid';$order['status']='confirmed';
+                    $this->settleOrderEffects($pdo,$tenantId,$order,$orderId);
+                    Auth::audit('payment.late_event_restored','order',(string)$orderId,['payment_id'=>(int)$payment['id'],'total_cents'=>$total]);
+                }else{
+                    $pdo->prepare('UPDATE orders SET payment_status="paid",status="cancelled" WHERE id=? AND tenant_id=?')->execute([$orderId,$tenantId]);
+                    $lateRefundRequired=true;
+                    $this->eventAuditForOrder($pdo,$tenantId,$orderId,'payment.late_refund_required',['payment_id'=>(int)$payment['id'],'total_cents'=>$total]);
+                    Auth::audit('payment.late_event_refund_required','order',(string)$orderId,['payment_id'=>(int)$payment['id'],'total_cents'=>$total]);
+                }
+                return;
+            }
+
+            $becameConfirmed=(string)$order['status']==='pending';
+            $pdo->prepare('UPDATE orders SET payment_status="paid",status=CASE WHEN status="pending" THEN "confirmed" ELSE status END WHERE id=? AND tenant_id=?')->execute([$orderId,$tenantId]);
+            $order['payment_status']='paid';if($becameConfirmed)$order['status']='confirmed';$customerConfirmed=$becameConfirmed&&(string)($order['channel']??'')==='delivery';
+            $this->settleOrderEffects($pdo,$tenantId,$order,$orderId);
+            if((string)($order['channel']??'')!=='event')(new ProductionService())->ensureOrderJobs($pdo,$tenantId,$orderId,null);
+            Auth::audit('payment.order_settled','order',(string)$orderId,['final_payment_id'=>(int)$payment['id'],'total_cents'=>$total]);
+        });
+
+        $this->publishVerifiedNotification($verified);
+        if($lateRefundRequired)$this->publishLateEventRefundNotification($verified);
+        if($customerConfirmed){try{(new DeliveryCustomerPushService())->sendOrderStatus((int)$verified['order_id'],'confirmed');}catch(\Throwable$e){error_log('[delivery-customer-payment-push] '.$e::class.': '.$e->getMessage());}}
+    }
+
+    private function restoreExpiredEventTickets(PDO $pdo,int $tenantId,int $orderId):bool
+    {
+        $rows=$pdo->prepare(Database::portableSql($pdo,'SELECT t.event_id,t.batch_id,b.ticket_type_id,COUNT(*) qty FROM tickets t JOIN ticket_batches b ON b.id=t.batch_id AND b.event_id=t.event_id WHERE t.tenant_id=? AND t.order_id=? AND t.status="cancelled" GROUP BY t.event_id,t.batch_id,b.ticket_type_id FOR UPDATE'));
+        $rows->execute([$tenantId,$orderId]);$groups=$rows->fetchAll();if(!$groups)return false;
+        $all=$pdo->prepare('SELECT COUNT(*) FROM tickets WHERE tenant_id=? AND order_id=?');$all->execute([$tenantId,$orderId]);$allCount=(int)$all->fetchColumn();$cancelled=array_sum(array_map(static fn($r)=>(int)$r['qty'],$groups));if($allCount!==$cancelled)return false;
+        $eventId=(int)$groups[0]['event_id'];foreach($groups as$g)if((int)$g['event_id']!==$eventId)return false;
+        $e=$pdo->prepare(Database::portableSql($pdo,'SELECT e.*,t.status tenant_status FROM events e JOIN tenants t ON t.id=e.tenant_id WHERE e.id=? AND e.tenant_id=? FOR UPDATE'));$e->execute([$eventId,$tenantId]);$event=$e->fetch();if(!$event||$event['status']!=='published'||$event['tenant_status']!=='active')return false;
+        if(!empty($event['ends_at'])&&new \DateTimeImmutable('now')>new \DateTimeImmutable((string)$event['ends_at']))return false;
+        if($event['capacity_total']!==null){
+            $u=$pdo->prepare('SELECT COUNT(*) FROM tickets WHERE tenant_id=? AND event_id=? AND status IN ("reserved","paid","checked_in")');$u->execute([$tenantId,$eventId]);$used=(int)$u->fetchColumn();
+            $g=$pdo->prepare('SELECT COALESCE(SUM(1+COALESCE(plus_ones,0)),0) FROM event_guests WHERE tenant_id=? AND event_id=? AND status IN ("invited","checked_in")');$g->execute([$tenantId,$eventId]);$used+=(int)$g->fetchColumn();
+            if($used+$cancelled>(int)$event['capacity_total'])return false;
+        }
+        $neededByType=[];
+        foreach($groups as$group){
+            $b=$pdo->prepare(Database::portableSql($pdo,'SELECT b.*,tt.capacity_total ticket_type_capacity,tt.active ticket_type_active FROM ticket_batches b LEFT JOIN ticket_types tt ON tt.id=b.ticket_type_id AND tt.tenant_id=? AND tt.event_id=b.event_id WHERE b.id=? AND b.event_id=? FOR UPDATE'));$b->execute([$tenantId,(int)$group['batch_id'],$eventId]);$batch=$b->fetch();if(!$batch)return false;
+            $available=(int)$batch['quantity_total']-(int)$batch['quantity_sold']-(int)$batch['quantity_reserved'];if($available<(int)$group['qty'])return false;
+            if(!empty($batch['ticket_type_id'])){$typeId=(int)$batch['ticket_type_id'];if(!(int)$batch['ticket_type_active'])return false;$neededByType[$typeId]=($neededByType[$typeId]??0)+(int)$group['qty'];}
+        }
+        foreach($neededByType as$typeId=>$needed){
+            $t=$pdo->prepare('SELECT capacity_total FROM ticket_types WHERE id=? AND tenant_id=? AND event_id=?');$t->execute([$typeId,$tenantId,$eventId]);$cap=$t->fetchColumn();if($cap!==false&&$cap!==null){$u=$pdo->prepare('SELECT COUNT(*) FROM tickets t JOIN ticket_batches b ON b.id=t.batch_id AND b.event_id=t.event_id WHERE t.tenant_id=? AND t.event_id=? AND b.ticket_type_id=? AND t.status IN ("reserved","paid","checked_in")');$u->execute([$tenantId,$eventId,$typeId]);if((int)$u->fetchColumn()+$needed>(int)$cap)return false;}}
+        foreach($groups as$group)$pdo->prepare('UPDATE ticket_batches SET quantity_sold=quantity_sold+? WHERE id=? AND event_id=?')->execute([(int)$group['qty'],(int)$group['batch_id'],$eventId]);
+        $pdo->prepare('UPDATE tickets SET status="paid",reserved_until=NULL WHERE tenant_id=? AND order_id=? AND status="cancelled"')->execute([$tenantId,$orderId]);
+        $this->eventAuditForOrder($pdo,$tenantId,$orderId,'ticket.late_payment_restored',['quantity'=>$cancelled]);
+        return true;
+    }
+
+    private function publishVerifiedNotification(array $verified):void
+    {
+        $provider=(string)$verified['provider'];if($provider==='manual')return;$tenantId=(int)$verified['tenant_id'];$orderId=(int)$verified['order_id'];$providerId=(string)$verified['provider_payment_id'];
+        try{
+            $s=Database::connection()->prepare('SELECT id,amount_cents,status FROM payments WHERE tenant_id=? AND order_id=? AND provider=? AND provider_payment_id=? ORDER BY id DESC LIMIT 1');$s->execute([$tenantId,$orderId,$provider,$providerId]);$payment=$s->fetch();if(!$payment)return;
+            $notifications=new NotificationService();$amount='R$ '.number_format(((int)$payment['amount_cents'])/100,2,',','.');$source=strtolower((string)($verified['source']??$verified['payment_method_type']??''));
+            if($payment['status']==='duplicate_paid'){$notifications->publishToPermissionForTenant($tenantId,'refunds.manage',null,'payment.duplicate','Cobrança duplicada detectada','Uma segunda cobrança de '.$amount.' foi confirmada no pedido #'.$orderId.'. Revise o estorno da transação duplicada.','payment',(string)$payment['id'],'payment:'.$payment['id'].':duplicate','warning',gmdate('Y-m-d H:i:s',time()+604800));return;}
+            if($payment['status']!=='paid')return;
+            $title=str_contains($source,'pix')?'PIX recebido':(str_contains($source,'nfc')||str_contains($source,'card')||str_contains($source,'tef')?'Cartão aprovado':'Pagamento confirmado');
+            $notifications->publishToPermissionForTenant($tenantId,'payments.manage',null,'payment.received',$title,$amount.' confirmado no pedido #'.$orderId.'.','payment',(string)$payment['id'],'payment:'.$payment['id'].':received','success',gmdate('Y-m-d H:i:s',time()+172800));
+        }catch(\Throwable){}
+    }
+
+    private function publishLateEventRefundNotification(array $verified):void
+    {
+        try{
+            $tenantId=(int)$verified['tenant_id'];$orderId=(int)$verified['order_id'];$provider=(string)$verified['provider'];$providerId=(string)$verified['provider_payment_id'];
+            $s=Database::connection()->prepare('SELECT id,amount_cents FROM payments WHERE tenant_id=? AND order_id=? AND provider=? AND provider_payment_id=? ORDER BY id DESC LIMIT 1');$s->execute([$tenantId,$orderId,$provider,$providerId]);$payment=$s->fetch();if(!$payment)return;
+            $amount='R$ '.number_format(((int)$payment['amount_cents'])/100,2,',','.');
+            (new NotificationService())->publishToPermissionForTenant($tenantId,'refunds.manage',null,'event.payment_late_refund','Pagamento tardio de ingresso exige estorno','O pagamento de '.$amount.' do pedido de evento #'.$orderId.' chegou após a reserva expirar e os ingressos não puderam ser restaurados. O pagamento foi registrado como recebido e o pedido permaneceu cancelado. Faça a conciliação/estorno.','payment',(string)$payment['id'],'payment:'.$payment['id'].':late-event-refund','warning',gmdate('Y-m-d H:i:s',time()+604800));
+        }catch(\Throwable){}
+    }
+
+    private function findLocalPayment(PDO $pdo,int $tenantId,int $orderId,string $provider,array $verified):array|false
+    {
+        if(!empty($verified['payment_id'])){$s=$pdo->prepare(Database::portableSql($pdo,'SELECT * FROM payments WHERE id=? AND tenant_id=? AND order_id=? AND provider=? FOR UPDATE'));$s->execute([(int)$verified['payment_id'],$tenantId,$orderId,$provider]);if($p=$s->fetch())return $p;}
+        $providerId=(string)($verified['provider_payment_id']??'');if($providerId!==''){$s=$pdo->prepare(Database::portableSql($pdo,'SELECT * FROM payments WHERE tenant_id=? AND order_id=? AND provider=? AND provider_payment_id=? ORDER BY id DESC LIMIT 1 FOR UPDATE'));$s->execute([$tenantId,$orderId,$provider,$providerId]);if($p=$s->fetch())return $p;}
+        $s=$pdo->prepare(Database::portableSql($pdo,'SELECT * FROM payments WHERE tenant_id=? AND order_id=? AND provider=? AND status IN ("created","pending","authorized","failed","cancelled") ORDER BY id DESC LIMIT 1 FOR UPDATE'));$s->execute([$tenantId,$orderId,$provider]);return $s->fetch();
+    }
+
+    private function paidAmount(PDO $pdo,int $tenantId,int $orderId,?int $excludePaymentId=null):int
+    {
+        $sql='SELECT COALESCE(SUM(amount_cents),0) FROM payments WHERE tenant_id=? AND order_id=? AND status="paid"';$args=[$tenantId,$orderId];if($excludePaymentId){$sql.=' AND id<>?';$args[]=$excludePaymentId;}$s=$pdo->prepare($sql);$s->execute($args);return (int)$s->fetchColumn();
+    }
+
+    private function settleOrderEffects(PDO $pdo,int $tenantId,array $order,int $orderId):void
+    {
+        $settlement='settlement:order:'.$orderId;$loyalty=new LoyaltyPointsService();(new StockReservationService())->consumeForSettlement($pdo,$tenantId,$orderId,$settlement);
+        $tickets=$pdo->prepare(Database::portableSql($pdo,'SELECT event_id,batch_id,COUNT(*) qty FROM tickets WHERE tenant_id=? AND order_id=? AND status="reserved" GROUP BY event_id,batch_id FOR UPDATE'));$tickets->execute([$tenantId,$orderId]);
+        foreach($tickets->fetchAll()as$row){$qty=(int)$row['qty'];$pdo->prepare(Database::portableSql($pdo,'UPDATE ticket_batches SET quantity_reserved=GREATEST(0,quantity_reserved-?),quantity_sold=quantity_sold+? WHERE id=? AND event_id=?'))->execute([$qty,$qty,$row['batch_id'],$row['event_id']]);}
+        $pdo->prepare('UPDATE tickets SET status="paid",reserved_until=NULL WHERE tenant_id=? AND order_id=? AND status="reserved"')->execute([$tenantId,$orderId]);
+        if(!empty($order['coupon_id'])){
+            $r=$pdo->prepare(Database::portableSql($pdo,'SELECT * FROM coupon_reservations WHERE tenant_id=? AND order_id=? AND status="reserved" FOR UPDATE'));$r->execute([$tenantId,$orderId]);$reservation=$r->fetch();$insertSql=Database::portableSql($pdo,'INSERT IGNORE INTO coupon_redemptions (tenant_id,coupon_id,order_id,customer_id,discount_cents,idempotency_key) VALUES (?,?,?,?,?,?)');
+            $loyaltyDiscount=$loyalty->discountForOrder($pdo,$tenantId,$orderId);$couponDiscount=$reservation?(int)$reservation['discount_cents']:max(0,(int)$order['discount_cents']-$loyaltyDiscount);
+            if($reservation){$pdo->prepare('UPDATE coupon_reservations SET status="redeemed" WHERE id=? AND tenant_id=?')->execute([$reservation['id'],$tenantId]);$pdo->prepare(Database::portableSql($pdo,'UPDATE coupons SET reserved_count=GREATEST(0,reserved_count-1),uses_count=uses_count+1 WHERE id=? AND tenant_id=?'))->execute([$order['coupon_id'],$tenantId]);$pdo->prepare($insertSql)->execute([$tenantId,$order['coupon_id'],$orderId,$order['customer_id']?:null,$couponDiscount,$settlement.':coupon']);}
+            else{$red=$pdo->prepare($insertSql);$red->execute([$tenantId,$order['coupon_id'],$orderId,$order['customer_id']?:null,$couponDiscount,$settlement.':coupon']);if($red->rowCount()===1)$pdo->prepare('UPDATE coupons SET uses_count=uses_count+1 WHERE id=? AND tenant_id=?')->execute([$order['coupon_id'],$tenantId]);}
+        }
+        $loyalty->settleForOrder($pdo,$tenantId,$orderId,$settlement);$loyalty->earnForOrder($pdo,$tenantId,$order,$orderId,$settlement);
+        if(!empty($order['promoter_id'])){
+            $p=$pdo->prepare('SELECT commission_percent FROM promoters WHERE id=? AND tenant_id=? AND active=1');$p->execute([$order['promoter_id'],$tenantId]);$percent=$p->fetchColumn();
+            if($percent!==false){
+                try{$event=$pdo->prepare('SELECT event_id FROM tickets WHERE tenant_id=? AND order_id=? LIMIT 1');$event->execute([$tenantId,$orderId]);$eventId=$event->fetchColumn();if($eventId){$ep=$pdo->prepare('SELECT commission_percent FROM event_promoters WHERE tenant_id=? AND event_id=? AND promoter_id=? AND active=1 LIMIT 1');$ep->execute([$tenantId,$eventId,$order['promoter_id']]);$override=$ep->fetchColumn();if($override!==false&&$override!==null)$percent=(float)$override;}}catch(\Throwable){}
+                $commission=(int)round((int)$order['total_cents']*((float)$percent/100));$pdo->prepare(Database::portableSql($pdo,'INSERT IGNORE INTO promoter_commissions (tenant_id,promoter_id,order_id,amount_cents,status,idempotency_key) VALUES (?,?,?,?,"approved",?)'))->execute([$tenantId,$order['promoter_id'],$orderId,$commission,$settlement.':commission']);
+            }
+        }
+    }
+
+    private function eventAuditForOrder(PDO $pdo,int $tenantId,int $orderId,string $action,array $metadata):void
+    {
+        try{$s=$pdo->prepare('SELECT event_id FROM tickets WHERE tenant_id=? AND order_id=? LIMIT 1');$s->execute([$tenantId,$orderId]);$eventId=(int)$s->fetchColumn();if($eventId>0)$pdo->prepare('INSERT INTO event_audit_events (tenant_id,event_id,user_id,action,entity_type,entity_id,metadata) VALUES (?,?,?,?,?,?,?)')->execute([$tenantId,$eventId,Auth::id(),$action,'order',(string)$orderId,json_encode($metadata,JSON_UNESCAPED_UNICODE)]);}catch(\Throwable){}
+    }
+}

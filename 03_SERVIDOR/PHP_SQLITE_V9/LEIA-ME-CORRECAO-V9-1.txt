@@ -1,0 +1,35 @@
+CARDÁPIO SaaS V9.1 — CORREÇÃO DE CSS NA HOSPEDAGEM
+==================================================
+
+PROBLEMA
+A atualização V9 instalou a folha de estilos em public/assets/platform-saas-v9.css,
+mas o site normalmente atende URLs como /1/assets/platform-saas-v9.css a partir
+da pasta de instalação. O .htaccess impede acessar diretamente /public.
+O navegador recebe a página PHP atualizada, porém sem a folha visual V9.
+Isso faz o cabeçalho e o menu aparecerem soltos e o fundo ficar escuro.
+
+O QUE ESTE ZIP ALTERA
+- assets/platform-saas-v9.css (caminho que faltava na instalação pela raiz)
+- public/assets/platform-saas-v9.css (caminho para instalações com DocumentRoot public/)
+Nenhum PHP, banco de dados, configuração, conta ou campanha é alterado.
+
+COMO APLICAR NO CPANEL (SITE INSTALADO EM public_html/1)
+1. Faça um backup da pasta atual, especialmente assets/ e public/assets/.
+2. Envie este ZIP para public_html/1/ e extraia MANTENDO as pastas do ZIP.
+3. Confira que agora existe public_html/1/assets/platform-saas-v9.css.
+4. Abra no navegador: https://SEU-DOMINIO/1/assets/platform-saas-v9.css
+   Deve aparecer texto CSS iniciado por: /* Cardápio SaaS V9.
+   Se aparecer 404, página de login ou HTML, o caminho da instalação ainda está incorreto.
+5. Reabra as páginas do Super ADM em janela anônima ou faça recarga forçada.
+6. Confira menu, dashboard, campanhas, financeiro, empresas e planos no celular e PC.
+
+IMPORTANTE
+Esta correção pressupõe que a atualização V9 já instalou app/admin_helpers.php
+e app/routes/super.php corretamente. Ela não transforma uma versão anterior em V9.
+Não envie ZIPs de 'servidor completo' sobre um site existente com dados reais.
+Não altere .env, storage/, banco SQLite, usuários, pedidos ou campanhas.
+
+VALIDAÇÃO LOCAL
+A presença/ausência dos caminhos foi conferida no pacote V9 e comparada ao
+link gerado pela função app_url(). A correção pode ser validada estaticamente
+no navegador. Não é uma homologação no servidor real do cliente.

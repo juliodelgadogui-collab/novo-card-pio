@@ -1,0 +1,47 @@
+CARDÁPIO SaaS V9 — REDESIGN DO PAINEL SUPER ADM
+16/10/2026
+
+ESCOPO
+- Novo visual da administração da plataforma (Super ADM) em estilo SaaS moderno.
+- Sidebar, barra superior, navegação móvel, indicadores, gráfico de volume de pedidos pagos
+  nos últimos seis meses, distribuição de empresas, empresas recentes e links rápidos.
+- As páginas de empresas, planos, Delivery/financeiro e saúde mantêm os recursos/rotas existentes,
+  agora usando a identidade visual V9 quando abertas no contexto do Super ADM.
+- Não modifica o cardápio público, o portal de clientes, o aplicativo Android/Windows,
+  os endpoints de API, os pagamentos, a autenticação ou o banco de dados.
+
+ATUALIZAÇÃO EM INSTALAÇÃO EXISTENTE (ZIP DE ATUALIZAÇÃO)
+1. Faça backup dos arquivos do servidor e do banco SQLite antes da atualização.
+2. Envie/extraia os três arquivos nas MESMAS pastas relativas da instalação:
+   app/admin_helpers.php
+   app/routes/super.php
+   public/assets/platform-saas-v9.css
+3. NÃO apague nem substitua a pasta storage, o banco, o arquivo .env nem os dados das empresas.
+4. Reabra https://SEU-DOMINIO/1/?route=super em janela anônima para conferir a V9.
+5. Se o visual antigo persistir, limpe cache/SW do site e recarregue.
+6. Verifique 'Empresas', 'Planos e assinaturas', 'Financeiro' e 'Saúde do sistema',
+   incluindo links, formulários, permissões, menu de celular e PC.
+
+COMPATIBILIDADE
+- Esta atualização foi gerada SOBRE o Cardápio Experience V8.1 do projeto enviado.
+- Se sua instalação tiver alterações manuais em app/admin_helpers.php ou app/routes/super.php,
+  compare os arquivos antes de substituí-los.
+- Usar preferencialmente PHP 8.2+ e as mesmas extensões exigidas pelo servidor.
+
+SERVIDOR COMPLETO (ZIP SEPARADO)
+- Destinado somente à instalação nova em ambiente vazio.
+- Inclui as dependências PHP, instalador, configuração-exemplo e o novo tema.
+- NÃO use o ZIP completo para sobrescrever uma instalação que já tenha empresas ou dados.
+
+VALIDAÇÃO EXECUTADA
+- Sintaxe de 1.168 arquivos PHP: sem erros.
+- Parsing CSS: sem erros de sintaxe de folha de estilo.
+- Teste visual estático em Chromium 1440 px, 393 px e 320 px: sem rolagem horizontal.
+- Abertura/fechamento do menu móvel: aprovado no teste de interface.
+- NÃO foi possível homologar autenticação, banco nem fluxos em hospedagem real porque
+  o ambiente local não dispõe da extensão PDO SQLite.
+- As capturas HTML são fixtures visuais, não registros de dados reais.
+
+ROLLBACK
+- Restaure os dois arquivos PHP do backup e remova public/assets/platform-saas-v9.css.
+- Banco e dados não precisam ser restaurados se a alteração tiver sido exclusivamente visual.

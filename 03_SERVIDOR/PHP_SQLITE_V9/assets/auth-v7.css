@@ -1,0 +1,26 @@
+/* EventMenu Experience v7 — autenticação; complemento a auth-v2.css */
+body.auth-v2{--color-primary:#7858d9;--color-primary-hover:#6242c7;--color-bg:#f7f7fc;--color-text-main:#26213c;--color-text-muted:#76758d;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+body.auth-v2 .auth-shell{background:#f8f8fc}
+body.auth-v2 .auth-showcase{background:linear-gradient(150deg,#15182f 0%,#2b2450 55%,#5c3fa1 100%);position:relative;isolation:isolate;overflow:hidden}
+body.auth-v2 .auth-showcase:before{content:"";position:absolute;inset:auto -220px -260px auto;width:630px;height:630px;border-radius:50%;border:1px solid rgba(255,255,255,.16);box-shadow:0 0 0 90px rgba(255,255,255,.025),0 0 0 185px rgba(255,255,255,.02);pointer-events:none;z-index:-1}
+body.auth-v2 .auth-brandmark{background:linear-gradient(145deg,#a98bff,#7456db);color:white;border-radius:15px;box-shadow:0 10px 25px rgba(26,16,55,.2)}
+body.auth-v2 .auth-brandline{font-weight:850;letter-spacing:-.04em}
+body.auth-v2 .auth-kicker{color:#d9caff;letter-spacing:.15em}
+body.auth-v2 .auth-pitch h1{font-weight:850;letter-spacing:-.055em;line-height:1.07;font-size:clamp(36px,3.4vw,57px)}
+body.auth-v2 .auth-pitch p{color:#d9d5e9;max-width:520px;line-height:1.7}
+body.auth-v2 .auth-benefit{background:rgba(255,255,255,.075);border:1px solid rgba(255,255,255,.13);border-radius:16px;padding:15px 16px;backdrop-filter:blur(5px)}
+body.auth-v2 .auth-benefit strong{color:#fff}
+body.auth-v2 .auth-benefit span{color:#d0cbe2}
+body.auth-v2 .auth-main{background:radial-gradient(circle at 80% 15%,rgba(180,155,243,.085),transparent 40%),#f8f8fc}
+body.auth-v2 .auth-panel{background:#fff;border:1px solid #e8e5ef;border-radius:24px;box-shadow:0 20px 65px rgba(31,27,70,.07);padding:clamp(28px,4vw,52px)}
+body.auth-v2 .auth-panel-head h2{font-size:31px;letter-spacing:-.05em;font-weight:830;color:#26213d}
+body.auth-v2 .auth-panel-head p{color:#8c8a9d}
+body.auth-v2 .auth-field>span:first-child{color:#4c4963;font-weight:720}
+body.auth-v2 .auth-input-wrap input{border:1px solid #e1dfeb;border-radius:12px;background:#fcfcff;min-height:52px;color:#2b2841}
+body.auth-v2 .auth-input-wrap:focus-within input{border-color:#906fea;box-shadow:0 0 0 4px rgba(120,88,217,.1)}
+body.auth-v2 .auth-submit{min-height:51px;border-radius:13px;background:linear-gradient(110deg,#805de2,#6745cd);font-weight:810;box-shadow:0 12px 25px rgba(98,66,199,.2)}
+body.auth-v2 .auth-submit:hover{background:linear-gradient(110deg,#896be5,#7554d4)}
+body.auth-v2 .auth-help{border-top:1px solid #f0edf6;padding-top:20px;line-height:1.6}
+body.auth-v2 :is(a,button,input):focus-visible{outline:3px solid #bba9f7;outline-offset:2px}
+@media(max-width:920px){body.auth-v2 .auth-main{background:#f8f8fc}body.auth-v2 .auth-panel{margin:0 auto}}
+@media(max-width:480px){body.auth-v2 .auth-shell{background:#fff}body.auth-v2 .auth-panel{min-height:100dvh;border:0;box-shadow:none;border-radius:0;padding:28px 24px}body.auth-v2 .auth-panel-head h2{font-size:28px}}

@@ -1,0 +1,41 @@
+CARDÁPIO EXPERIENCE V8 — DESIGN NOVO / 16 OUT 2026
+
+DIFERENTE DA V7
+- Interface administrativa redesenhada com navegação grafite, verde petróleo, cabeçalho em duas camadas, cartões, tabelas e painel responsivo.
+- Navegação de celular independente com sobreposição e fechar por toque/Esc.
+- Cardápio público reorganizado em hero dividido, informações separadas da arte, categorias, cards verticais com fotos maiores e painel de pedido.
+- Login de duas colunas no desktop e login compacto no celular.
+- Seleção de unidade com cartões e tipografia consistente.
+- Nova versão do service worker (v11) e URLs de CSS versionadas para evitar exibição de tema antigo.
+
+O QUE MUDOU NO CÓDIGO
+- app/admin_helpers.php: layout compartilhado do Super ADM e painel.
+- app/routes/dashboard.php: apresentação da página inicial operacional.
+- public/index.php: estilização e texto da página de acesso.
+- public/menu.php: estrutura do banner, informações, categorias e carrinho; formulários e dados do pedido preservados.
+- public/loja.php: carregamento do novo layout.
+- public/sw.js: cache de assets atualizado para v11.
+- assets/ e public/assets/: quatro CSS V8 idênticos nas duas raízes.
+- Não foram editados serviços, migrations, queries de pagamento, endpoints de API ou controle de acesso.
+
+INSTRUÇÕES PARA SERVIDOR JÁ EXISTENTE
+1. Faça backup integral dos arquivos, do banco, do .env e de storage.
+2. Envie APENAS Cardapio_Experience_V8_ATUALIZACAO_VISUAL.zip e extraia na raiz da instalação (por exemplo public_html/1/), mantendo a estrutura dos diretórios.
+3. NÃO apague .env, storage nem o banco SQLite.
+4. Atualize o navegador, e teste em aba anônima se a V7 aparecer. O novo service worker limpa somente caches antigos da mesma instalação.
+5. Confira login, Super ADM, dashboard, produtos com e sem imagem, variações, pesquisa, adição ao carrinho e checkout em Android e computador.
+6. Se houver incompatibilidade, restaure os arquivos do backup. Não migre o banco por causa de uma atualização visual.
+
+INSTALAÇÃO NOVA
+- Use o pacote SERVIDOR_COMPLETO_V8 e siga LEIA-ME-INSTALACAO.txt.
+- Inclui vendor/ e instalador, mas ainda exige PHP 8.2+, extensões, HTTPS, permissões e configuração real do cron.
+
+VALIDAÇÃO
+- Sintaxe dos 1.168 PHP do pacote: sem erros.
+- Parsing das quatro novas folhas CSS: sem erros do parser.
+- Integridade dos ZIPs e hashes: conferidos.
+- NÃO foi possível completar o teste automatizado de capturas no navegador deste ambiente.
+- Layout real com autenticação, pedidos e pagamentos ainda precisa ser verificado na hospedagem antes de publicar.
+
+PREVIAS
+- Arquivos HTML separados no pacote de demonstrações, com dados fictícios. Não substituem o site nem processam pagamentos.

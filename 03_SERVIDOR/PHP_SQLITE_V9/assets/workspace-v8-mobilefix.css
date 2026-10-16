@@ -1,0 +1,109 @@
+/* EventMenu V8.1 — correções do Super ADM para celular (16/10/2026)
+   Camada carregada depois de todas as versões anteriores do tema.
+   CSS apenas de apresentação: não altera dados, endpoints nem fluxos de formulários.
+*/
+body.em-platform,
+body.em-platform .content{background:#f5f7f8!important;color:#182b31!important}
+/* Remove círculos decorativos legados que atravessavam o texto. */
+body.em-premium.em-platform .page-hero:before,
+body.em-premium.em-platform .platform-hero:before{
+  content:""!important;position:absolute!important;
+  left:0!important;top:0!important;bottom:0!important;right:auto!important;
+  width:4px!important;height:auto!important;max-height:none!important;
+  border:0!important;border-radius:0!important;
+  background:#17795c!important;box-shadow:none!important;transform:none!important;
+  opacity:1!important;pointer-events:none!important;z-index:0!important;
+}
+body.em-premium.em-platform .page-hero:after,
+body.em-premium.em-platform .platform-hero:after{display:none!important;content:none!important}
+body.em-premium.em-platform .page-hero{overflow:hidden!important;background:#e9f3ee!important;min-height:0!important;box-shadow:none!important}
+body.em-premium.em-platform .page-hero>*,body.em-premium.em-platform .platform-hero>*{position:relative!important;z-index:1!important;min-width:0!important}
+body.em-premium.em-platform .page-hero h2{font-size:clamp(24px,2.6vw,32px)!important;line-height:1.16!important;max-width:35ch!important;letter-spacing:-.035em!important;color:#174536!important}
+body.em-premium.em-platform .page-hero p{color:#49695e!important;font-size:14px!important;max-width:55ch!important;line-height:1.55!important}
+body.em-premium.em-platform .page-hero .eyebrow{color:#296e54!important}
+body.em-premium.em-platform .hero-actions a.button{min-height:44px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;white-space:normal!important;line-height:1.2!important}
+/* Clear platform typography & KPI cards. */
+body.em-premium.em-platform .metric-card{padding:17px!important;border-radius:14px!important;min-width:0!important;min-height:117px!important}
+body.em-premium.em-platform .metric-card span{font-size:12px!important;line-height:1.35!important;font-weight:680!important;color:#53686f!important}
+body.em-premium.em-platform .metric-card strong{font-size:clamp(22px,2.5vw,28px)!important;line-height:1.17!important;letter-spacing:-.035em!important;color:#142e31!important;overflow-wrap:anywhere!important}
+body.em-premium.em-platform .metric-card small{font-size:11px!important;line-height:1.4!important;color:#73858a!important}
+body.em-premium.em-platform .section-head h2{color:#20383e!important;letter-spacing:-.03em!important}
+body.em-premium.em-platform .cockpit-card{background:#fff!important;border:1px solid #e0e8e5!important;box-shadow:0 4px 16px rgba(15,48,39,.04)!important}
+body.em-premium.em-platform .cockpit-card>span:first-child{font-size:14px!important;color:#53676c!important}
+body.em-premium.em-platform .cockpit-card>strong{font-size:25px!important;color:#162e33!important}
+body.em-premium.em-platform .cockpit-card>small{font-size:12px!important;color:#667b80!important}
+body.em-premium.em-platform .cockpit-card>.badge{border-radius:8px!important;padding:5px 9px!important;font-size:11px!important;max-width:90px!important}
+body.em-premium.em-platform .alert{font-size:13px!important;line-height:1.5!important;border-radius:10px!important}
+/* Badges legíveis sobre superfícies escuras. */
+body.em-premium.em-platform .cockpit-card>.badge{background:#213a45!important;color:#ffffff!important;border:1px solid #213a45!important;text-shadow:none!important}
+body.em-premium.em-platform .section-head>.muted{color:#667a80!important}
+/* The old platform stylesheet forced desktop proportions and full-screen nav on touch. */
+@media (max-width:950px), (pointer:coarse) and (max-width:1200px){
+  body.em-premium.em-platform{overflow-x:hidden!important}
+  body.em-premium.em-platform .layout{display:block!important;grid-template-columns:none!important;min-width:0!important;width:100%!important}
+  body.em-premium.em-platform .content{padding:80px 16px 34px!important;margin:0!important;max-width:none!important;min-width:0!important;width:100%!important;box-sizing:border-box!important}
+  body.em-premium.em-platform .sidebar,
+  body.em-premium.em-platform .sidebar:not(.nav-open),
+  body.em-premium.em-platform .sidebar.nav-open{
+    display:flex!important;flex-direction:column!important;
+    position:fixed!important;inset:0 auto 0 0!important;
+    width:min(84vw,330px)!important;max-width:330px!important;
+    height:100dvh!important;min-height:0!important;
+    padding:16px 12px!important;overflow:hidden!important;
+    border-right:1px solid #2a4045!important;border-bottom:0!important;
+    background:#12212a!important;z-index:151!important;box-shadow:8px 0 36px rgba(8,26,23,.22)!important;
+  }
+  body.em-premium.em-platform .sidebar:not(.nav-open){transform:translateX(-110%)!important;visibility:hidden!important;pointer-events:none!important}
+  body.em-premium.em-platform .sidebar.nav-open{transform:translateX(0)!important;visibility:visible!important;pointer-events:auto!important}
+  body.em-premium.em-platform .sidebar-head,
+  body.em-premium.em-platform .sidebar.nav-open .sidebar-head{display:flex!important;position:static!important;width:auto!important;min-height:60px!important;height:auto!important;padding:7px 8px 17px!important;border-bottom:1px solid #31484a!important;margin:0 0 12px!important}
+  body.em-premium.em-platform .sidebar .brand:before{display:none!important;content:none!important}
+  body.em-premium.em-platform .sidebar .brand{font-size:16px!important;white-space:normal!important;color:#fff!important}
+  body.em-premium.em-platform .sidebar .nav-toggle{display:flex!important;flex:0 0 40px!important;height:40px!important;width:40px!important;margin-left:auto!important}
+  body.em-premium.em-platform .sidebar .platform-context{display:grid!important;flex:0 0 auto!important;gap:4px!important;margin:0 2px 8px!important;background:#213841!important}
+  body.em-premium.em-platform .sidebar .nav,
+  body.em-premium.em-platform .sidebar.nav-open .nav{display:block!important;flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;margin:4px 0 8px!important;padding:0 2px 18px!important;align-content:start!important;gap:0!important}
+  body.em-premium.em-platform .sidebar .nav-group{display:block!important;margin:8px 0 14px!important;gap:0!important}
+  body.em-premium.em-platform .sidebar .nav-group-title{font-size:10px!important;margin:0 0 5px!important;padding:7px 10px!important}
+  body.em-premium.em-platform .sidebar .nav a{display:flex!important;align-items:center!important;font-size:14px!important;min-height:46px!important;line-height:1.3!important;padding:9px 11px!important;margin:3px 0!important}
+  body.em-premium.em-platform .sidebar .sidebar-foot,
+  body.em-premium.em-platform .sidebar.nav-open .sidebar-foot{display:block!important;flex:0 0 auto!important;margin-top:auto!important;padding:10px 3px 0!important}
+  body.em-premium.em-platform .v8-mobile-bar{display:flex!important;position:fixed!important;inset:0 0 auto 0!important;height:62px!important;z-index:130!important;padding:0 16px!important;background:#fff!important;border-bottom:1px solid #e1e8e6!important;box-shadow:0 3px 12px rgba(15,41,34,.04)!important}
+  body.em-premium.em-platform .v8-sidebar-scrim{display:none!important}
+  body.em-premium.em-platform.menu-open .v8-sidebar-scrim{display:block!important;z-index:140!important;background:rgba(5,24,26,.54)!important}
+  body.em-premium.em-platform .v8-workspace-strip{height:0!important;overflow:hidden!important;margin:0!important;border:0!important}
+  body.em-premium.em-platform .topbar{display:block!important;min-height:0!important;margin:0 0 20px!important;padding:0!important;border:0!important;background:transparent!important}
+  body.em-premium.em-platform .topbar h1{font-size:28px!important;line-height:1.12!important;color:#173137!important}
+  body.em-premium.em-platform .top-eyebrow{color:#2e755c!important;font-size:11px!important}
+  body.em-premium.em-platform .top-subtitle{font-size:13px!important;line-height:1.45!important}
+  body.em-premium.em-platform .topbar-actions{display:none!important}
+  body.em-premium.em-platform .page-hero{padding:22px!important;margin:0 0 18px!important;border-radius:14px!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:14px!important}
+  body.em-premium.em-platform .page-hero h2{font-size:27px!important}
+  body.em-premium.em-platform .page-hero .hero-actions{display:grid!important;grid-template-columns:1fr 1fr!important;justify-content:stretch!important;width:100%!important;margin:0!important;gap:9px!important}
+  body.em-premium.em-platform .page-hero .hero-actions>*{min-width:0!important;width:100%!important;padding:11px 8px!important}
+  body.em-premium.em-platform .metric-grid,
+  body.em-premium.em-platform .route-super [data-platform-cockpit]>.metric-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:11px!important}
+  body.em-premium.em-platform .platform-cockpit,
+  body.em-premium.em-platform .route-super .platform-cockpit{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
+  body.em-premium.em-platform .section-head{margin:22px 0 12px!important}
+  body.em-premium.em-platform .section-head h2{font-size:20px!important}
+  body.em-premium.em-platform .cockpit-card{min-height:105px!important;padding:17px!important}
+  body.em-premium.em-platform .cockpit-card>strong{font-size:24px!important}
+  body.em-premium.em-platform .card{padding:17px!important}
+  body.em-premium.em-platform .commercial-grid,
+  body.em-premium.em-platform .admin-two-col{grid-template-columns:minmax(0,1fr)!important}
+}
+@media(max-width:460px){
+ body.em-premium.em-platform .content{padding:77px 14px 32px!important}
+ body.em-premium.em-platform .page-hero{padding:19px!important}
+ body.em-premium.em-platform .page-hero h2{font-size:25px!important}
+ body.em-premium.em-platform .metric-card{padding:14px!important;min-height:111px!important}
+ body.em-premium.em-platform .metric-card strong{font-size:23px!important}
+ body.em-premium.em-platform .metric-card span{font-size:12px!important}
+ body.em-premium.em-platform .metric-card small{font-size:11px!important}
+}
+@media(max-width:350px){
+ body.em-premium.em-platform .metric-grid,
+ body.em-premium.em-platform .route-super [data-platform-cockpit]>.metric-grid{grid-template-columns:1fr!important}
+ body.em-premium.em-platform .page-hero .hero-actions{grid-template-columns:1fr!important}
+}

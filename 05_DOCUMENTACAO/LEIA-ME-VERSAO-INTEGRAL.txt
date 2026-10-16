@@ -1,0 +1,18 @@
+CARDÁPIO — REPOSITÓRIO INTEGRAL + ESTRUTURA ORGANIZADA
+
+Estrutura principal:
+01_APK_ANDROID — GO V10, DELIVERY V11, CONNECT
+02_WINDOWS — Desktop / WhatsApp Connect / integrations
+03_SERVIDOR — PHP_SQLITE_V9, PORTAL_APKS, SCRIPTS_FONTE
+04_REFERENCIAS_DE_BRANCHES — alternativas selecionadas + ARQUIVO_ORIGINAL_164_BRANCHES.zip
+05_DOCUMENTACAO — documentação, workflows e mapa de branches
+
+IMPORTANTE:
+O arquivo ARQUIVO_ORIGINAL_164_BRANCHES.zip é o backup original de 164 branches tal como recebido.
+Ele foi incluído como arquivo ZIP interno para preservar integralmente seus nomes e bytes.
+As 95.135 entradas do original são em grande parte cópias de código entre as branches.
+O diretório 01/02/03 contém as versões escolhidas e organizadas.
+
+O pacote NÃO contém APKs/EXEs compilados nem garante instalações homologadas.
+Para publicá-lo no GitHub, prefira o repositório selecionado sem o ZIP das 164 branches.
+Nunca publique credenciais, bancos de produção ou arquivos .env em repositórios públicos.

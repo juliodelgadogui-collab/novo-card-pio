@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cardápio Delivery V11 - Prévia</title>
+<style>
+:root{
+  --bg:#08111f; --panel:#0f1b2e; --panel2:#12233a; --line:rgba(255,255,255,.08);
+  --text:#ebf2ff; --muted:#9bb0ce; --primary:#34c3ff; --primary2:#65d2b8;
+  --chip:#1a2a45; --success:#50d49e; --warning:#ffbd5c; --danger:#ff6c7e;
+}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:linear-gradient(180deg,#06101d,#0b1628 35%,#08111f);color:var(--text)}
+.wrapper{max-width:1200px;margin:0 auto;padding:22px 18px 32px}
+.header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--primary),var(--primary2));box-shadow:0 10px 30px rgba(52,195,255,.25)}
+.title h1{margin:0;font-size:20px}.title p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.badge{padding:8px 12px;border:1px solid var(--line);background:rgba(255,255,255,.04);border-radius:999px;color:var(--muted);font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:18px}.phone{background:linear-gradient(180deg,#091427,#0c172a);border:1px solid rgba(255,255,255,.09);border-radius:34px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.35);min-height:780px;position:relative}
+.status{height:34px;padding:10px 18px;color:#d8e7ff;font-size:12px;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.02)}
+.screen{padding:16px 16px 88px}.topline{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.avatar{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#1e3153,#213f60);display:grid;place-items:center;color:#fff;font-weight:700}.muted{color:var(--muted)}
+.search{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:18px;padding:14px 16px;color:var(--muted);margin-bottom:16px}
+.hero{background:radial-gradient(circle at top right,rgba(52,195,255,.26),transparent 35%),linear-gradient(135deg,#10233d,#0a1525);border:1px solid rgba(255,255,255,.07);border-radius:28px;padding:18px;position:relative;overflow:hidden;margin-bottom:16px}
+.hero::after{content:"";position:absolute;right:-18px;top:-14px;width:120px;height:120px;border-radius:28px;background:linear-gradient(135deg,rgba(101,210,184,.18),rgba(52,195,255,.10));transform:rotate(18deg)}
+.kicker{color:#7cccf7;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}.hero h2{margin:8px 0 8px;font-size:28px;line-height:1.04}.hero p{margin:0;color:#bed0ea;font-size:13px;max-width:260px}
+.row{display:flex;gap:10px;overflow:auto;scrollbar-width:none}.pill{white-space:nowrap;background:var(--chip);border:1px solid var(--line);color:#dce9ff;padding:10px 14px;border-radius:999px;font-size:12px}.pill.active{background:linear-gradient(135deg,rgba(52,195,255,.20),rgba(101,210,184,.20));border-color:rgba(52,195,255,.30)}
+.section{margin:18px 0 10px;display:flex;justify-content:space-between;align-items:end}.section h3{margin:0;font-size:18px}.section small{color:var(--muted)}
+.card{background:linear-gradient(180deg,#10203a,#0e1c31);border:1px solid var(--line);border-radius:24px;padding:14px;margin-bottom:12px}.cover{height:122px;border-radius:18px;background:linear-gradient(135deg,#1a3156,#213d63 45%,#2b5b71)}
+.storehead{display:flex;gap:12px;margin-top:12px}.logoSm{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#1e2840,#203759)}.w1{display:flex;flex-direction:column;gap:4px;min-width:0}.w1 b{font-size:16px}.w1 span{font-size:12px;color:var(--muted)}.meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.tag{font-size:11px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.05);color:#dce7f7;border:1px solid var(--line)}
+.product{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.05)}.product:last-child{border-bottom:none}.thumb{width:74px;height:74px;border-radius:18px;background:linear-gradient(135deg,#3d4d70,#8b5f44)}.product h4{margin:0 0 4px;font-size:15px}.product p{margin:0;color:var(--muted);font-size:12px;line-height:1.4}.price{font-weight:800;margin-top:8px}.stepper{margin-left:auto;display:grid;place-items:center;background:rgba(52,195,255,.12);border:1px solid rgba(52,195,255,.25);width:38px;height:38px;border-radius:14px;color:#b8e8ff;font-weight:700}
+.cta{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:20px;background:linear-gradient(135deg,rgba(52,195,255,.18),rgba(101,210,184,.18));border:1px solid rgba(101,210,184,.18);margin-top:12px}.cta button{background:linear-gradient(135deg,var(--primary),var(--primary2));border:none;color:#08233a;font-weight:800;padding:12px 16px;border-radius:16px}
+.order{padding:14px;border-radius:20px;background:rgba(255,255,255,.03);border:1px solid var(--line);margin-bottom:10px}.order strong{display:block}.progress{display:flex;gap:6px;margin-top:10px}.dot{height:6px;flex:1;background:rgba(255,255,255,.08);border-radius:99px}.dot.on{background:linear-gradient(90deg,var(--primary),var(--primary2))}
+.bottom{position:absolute;left:0;right:0;bottom:0;background:rgba(8,17,31,.96);backdrop-filter:blur(18px);display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 14px 18px;border-top:1px solid var(--line)}
+.bottom div{text-align:center;font-size:11px;color:var(--muted)} .bottom div.active{color:#fff;font-weight:700}
+.checkout{background:linear-gradient(180deg,#10203a,#0d1b2e);border-radius:24px;padding:14px;border:1px solid var(--line)}
+.checkoutRow{display:flex;justify-content:space-between;color:#dce7f7;margin:8px 0}.checkoutRow.muted{color:var(--muted)}
+.fullbtn{width:100%;margin-top:14px;border:none;border-radius:18px;padding:15px 16px;font-weight:800;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#08233a}
+@media (max-width: 1120px){.grid{grid-template-columns:repeat(2,minmax(250px,1fr));}}
+@media (max-width: 700px){.grid{grid-template-columns:1fr}.wrapper{padding:16px}}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="brand"><div class="logo"></div><div class="title"><h1>Cardápio Delivery — SaaS V11</h1><p>Proposta visual do app do cliente em estilo moderno</p></div></div>
+    <div class="badge">Home · Restaurante · Carrinho · Pedidos</div>
+  </div>
+  <div class="grid">
+    <div class="phone"><div class="status"><span>13:12</span><span>5G · 82%</span></div><div class="screen">
+      <div class="topline"><div><div class="muted" style="font-size:12px">ENTREGAR EM</div><b>Rua das Flores, 120</b></div><div class="avatar">MC</div></div>
+      <div class="search">🔎 Buscar restaurantes, categorias ou pratos</div>
+      <div class="hero"><div class="kicker">DELIVERY INTELIGENTE</div><h2>Escolha. Peça. Acompanhe.</h2><p>Restaurantes próximos, promos do dia e entrega em tempo real com checkout simplificado.</p></div>
+      <div class="row"><div class="pill active">Mais pedidos</div><div class="pill">Pizza</div><div class="pill">Hambúrguer</div><div class="pill">Marmita</div><div class="pill">Doces</div></div>
+      <div class="section"><h3>Em destaque</h3><small>8 lojas abertas</small></div>
+      <div class="card"><div class="cover"></div><div class="storehead"><div class="logoSm"></div><div class="w1"><b>Brasa Burger House</b><span>Entrega grátis acima de R$ 40 · 28-43 min</span></div></div><div class="meta"><div class="tag">4.8 ★</div><div class="tag">Hambúrguer</div><div class="tag">Cupom de boas-vindas</div></div></div>
+      <div class="card"><div class="cover" style="background:linear-gradient(135deg,#24354d,#4f6b42,#7d5c3d)"></div><div class="storehead"><div class="logoSm" style="background:linear-gradient(135deg,#2a4036,#4f6b42)"></div><div class="w1"><b>Sabores da Vila</b><span>Mínimo R$ 18 · 17-30 min</span></div></div><div class="meta"><div class="tag">4.9 ★</div><div class="tag">Marmitas</div><div class="tag">Retirada disponível</div></div></div>
+    </div><div class="bottom"><div class="active">Início</div><div>Buscar</div><div>Pedidos</div><div>Perfil</div></div></div>
+
+    <div class="phone"><div class="status"><span>13:12</span><span>5G · 82%</span></div><div class="screen">
+      <div class="topline"><div><b>Brasa Burger House</b><div class="muted" style="font-size:12px">Hambúrguer · Artesanal</div></div><div class="badge" style="padding:8px 10px">28–43 min</div></div>
+      <div class="hero" style="padding-bottom:16px"><div class="kicker">LOJA</div><h2 style="font-size:24px">Cardápio com mais vendidos</h2><p>Monte seu pedido, escolha adicionais e acompanhe a entrega até a sua casa.</p></div>
+      <div class="row"><div class="pill active">Combos</div><div class="pill">Burgers</div><div class="pill">Acompanhamentos</div><div class="pill">Bebidas</div></div>
+      <div class="section"><h3>Combos da casa</h3><small>5 itens</small></div>
+      <div class="card">
+        <div class="product"><div class="thumb"></div><div><h4>Combo Brasa Duplo</h4><p>Pão brioche, 2 carnes, cheddar, bacon, batata frita e refrigerante lata.</p><div class="price">R$ 34,90</div></div><div class="stepper">+</div></div>
+        <div class="product"><div class="thumb" style="background:linear-gradient(135deg,#435170,#5a693e)"></div><div><h4>Smash Classic</h4><p>2 smash burgers, queijo, molho especial e fritas crocantes.</p><div class="price">R$ 28,90</div></div><div class="stepper">+</div></div>
+        <div class="product"><div class="thumb" style="background:linear-gradient(135deg,#4d536d,#704a3c)"></div><div><h4>Batata Supreme</h4><p>Batata com cheddar cremoso, bacon e cebolinha.</p><div class="price">R$ 18,00</div></div><div class="stepper">+</div></div>
+      </div>
+      <div class="cta"><div><div class="muted" style="font-size:11px">CARRINHO</div><b>2 itens · R$ 63,80</b></div><button>Ver pedido</button></div>
+    </div><div class="bottom"><div>Início</div><div class="active">Buscar</div><div>Pedidos</div><div>Perfil</div></div></div>
+
+    <div class="phone"><div class="status"><span>13:12</span><span>5G · 82%</span></div><div class="screen">
+      <div class="topline"><div><b>Seu pedido</b><div class="muted" style="font-size:12px">Revise antes de confirmar</div></div><div class="avatar">2</div></div>
+      <div class="checkout">
+        <div class="product"><div class="thumb"></div><div><h4>Combo Brasa Duplo</h4><p>1x sem cebola · molho barbecue</p><div class="price">R$ 34,90</div></div></div>
+        <div class="product"><div class="thumb" style="background:linear-gradient(135deg,#435170,#5a693e)"></div><div><h4>Smash Classic</h4><p>1x adicional cheddar</p><div class="price">R$ 28,90</div></div></div>
+        <div class="section" style="margin-top:8px"><h3>Resumo</h3><small>Cupom BRASA10 aplicado</small></div>
+        <div class="checkoutRow"><span>Subtotal</span><b>R$ 63,80</b></div>
+        <div class="checkoutRow muted"><span>Desconto</span><b>- R$ 6,38</b></div>
+        <div class="checkoutRow muted"><span>Entrega</span><b>R$ 4,99</b></div>
+        <div class="checkoutRow" style="font-size:18px"><span>Total</span><b>R$ 62,41</b></div>
+        <div class="card" style="margin:12px 0 0;padding:12px"><b>Entregar em</b><div class="muted" style="font-size:12px;margin-top:6px">Rua das Flores, 120 · Centro · Bom Jesus do Norte/ES</div></div>
+        <button class="fullbtn">Ir para pagamento</button>
+      </div>
+    </div><div class="bottom"><div>Início</div><div>Buscar</div><div class="active">Pedidos</div><div>Perfil</div></div></div>
+
+    <div class="phone"><div class="status"><span>13:12</span><span>5G · 82%</span></div><div class="screen">
+      <div class="topline"><div><b>Meus pedidos</b><div class="muted" style="font-size:12px">Acompanhe em tempo real</div></div><div class="badge">3 ativos</div></div>
+      <div class="order"><strong>Pedido #4182 · Brasa Burger House</strong><div class="muted" style="font-size:12px;margin-top:4px">Pagamento aprovado · total R$ 62,41</div><div class="progress"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot"></div></div><div class="muted" style="font-size:12px;margin-top:8px">Saiu para entrega · previsão 12 min</div></div>
+      <div class="order"><strong>Pedido #4171 · Sabores da Vila</strong><div class="muted" style="font-size:12px;margin-top:4px">Concluído · total R$ 24,90</div><div class="progress"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div></div><div class="muted" style="font-size:12px;margin-top:8px">Entregue ontem às 20:18</div></div>
+      <div class="section"><h3>Atalhos</h3><small>Facilitadores</small></div>
+      <div class="card"><div class="meta"><div class="tag">Repetir pedido</div><div class="tag">Avaliar loja</div><div class="tag">Ajuda</div><div class="tag">Carteira</div></div></div>
+      <div class="hero"><div class="kicker">FIDELIDADE</div><h2 style="font-size:24px">Ganhe pontos a cada pedido</h2><p>Acumule compras e desbloqueie cupons automáticos no próximo checkout.</p></div>
+    </div><div class="bottom"><div>Início</div><div>Buscar</div><div class="active">Pedidos</div><div>Perfil</div></div></div>
+  </div>
+</div>
+</body>
+</html>
