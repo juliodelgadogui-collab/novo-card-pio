@@ -1,0 +1,32 @@
+name: Compilar Cardapio GO
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Compilar APK GO
+        working-directory: 01_APK_ANDROID/GO
+        run: gradle :app:assembleDebug --no-daemon --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Cardapio-GO-debug
+          path: 01_APK_ANDROID/GO/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
