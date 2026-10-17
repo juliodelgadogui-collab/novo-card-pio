@@ -1,1 +1,8 @@
 *.zip filter=lfs diff=lfs merge=lfs -text
+*.apk filter=lfs diff=lfs merge=lfs -text
+*.aab filter=lfs diff=lfs merge=lfs -text
+*.exe filter=lfs diff=lfs merge=lfs -text
+*.msi filter=lfs diff=lfs merge=lfs -text
+*.dll filter=lfs diff=lfs merge=lfs -text
+04_REFERENCIAS_DE_BRANCHES/ARQUIVO_ORIGINAL_164_BRANCHES.zip filter=lfs diff=lfs merge=lfs -text
+Cardapio_PROJETO_INTEGRAL_164_BRANCHES_GO_DELIVERY_CONNECT_WINDOWS_SERVIDOR.zip filter=lfs diff=lfs merge=lfs -text
