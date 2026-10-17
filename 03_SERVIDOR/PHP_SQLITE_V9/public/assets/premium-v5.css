@@ -110,7 +110,3 @@ body.em-premium { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMac
 
 .sidebar .nav a { color: #cbd5e1 !important; }
 .sidebar .nav a.active { color: #ffffff !important; }
-
-/* Mobile unit selector: the sticky desktop topbar is hidden on small screens. */
-.mobile-unit-context{display:none}
-@media(max-width:950px){.mobile-unit-context{display:block;margin:0 0 16px;padding:12px 13px;border:1px solid var(--em-border);border-radius:15px;background:var(--em-surface);box-shadow:var(--em-shadow-xs)}.mobile-unit-context form{display:grid;gap:10px}.mobile-unit-context label{display:grid;gap:7px;color:var(--em-muted);font-size:12px;font-weight:850}.mobile-unit-context label span{color:var(--em-text)}.mobile-unit-context select{width:100%;min-height:44px;padding:11px 12px;border:1px solid var(--em-border);border-radius:11px;background:#fff;color:var(--em-text);font:inherit}.mobile-unit-context button{width:100%;min-height:42px}}

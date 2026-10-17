@@ -80,8 +80,8 @@ public sealed class LocalWhatsAppBridge : IDisposable
     public async Task<LocalBridgeState> LogoutAsync(CancellationToken ct=default)=>
         await SendAsync<LocalBridgeState>(HttpMethod.Post,$"v1/sessions/{_settings.SessionKey}/logout",new{},ct);
 
-    public async Task<LocalSendResponse> SendAsync(string phone,string message,string? mediaType=null,string? mediaUrl=null,string? mediaFilename=null,string? mediaMime=null,CancellationToken ct=default)=>
-        await SendAsync<LocalSendResponse>(HttpMethod.Post,$"v1/sessions/{_settings.SessionKey}/send",new{phone,message,media_type=mediaType,media_url=mediaUrl,media_filename=mediaFilename,media_mime=mediaMime},ct);
+    public async Task<LocalSendResponse> SendAsync(string phone,string message,CancellationToken ct=default)=>
+        await SendAsync<LocalSendResponse>(HttpMethod.Post,$"v1/sessions/{_settings.SessionKey}/send",new{phone,message},ct);
 
     private async Task<bool> IsHealthyAsync(CancellationToken ct)
     {

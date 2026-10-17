@@ -1,7 +1,5 @@
 import http from 'node:http';
 import path from 'node:path';
-import { lookup } from 'node:dns/promises';
-import { isIP } from 'node:net';
 import fs from 'node:fs/promises';
 import pino from 'pino';
 import makeWASocket, { Browsers, DisconnectReason, useMultiFileAuthState } from '@whiskeysockets/baileys';
@@ -62,81 +60,6 @@ function send(res, status, data) {
 function authenticated(req) {
   const auth = String(req.headers.authorization || '');
   return auth.startsWith('Bearer ') && auth.slice(7) === SECRET;
-}
-
-function isPublicAddress(address) {
-  const version = isIP(address);
-  if (version === 4) {
-    const p = address.split('.').map(Number);
-    const [a, b, c] = p;
-    if (a === 0 || a === 10 || a === 127 || a >= 224) return false;
-    if (a === 100 && b >= 64 && b <= 127) return false;
-    if (a === 169 && b === 254) return false;
-    if (a === 172 && b >= 16 && b <= 31) return false;
-    if (a === 192 && (b === 168 || (b === 0 && c === 0) || (b === 0 && c === 2))) return false;
-    if (a === 198 && (b === 18 || b === 19 || b === 51 && c === 100)) return false;
-    if (a === 203 && b === 0 && c === 113) return false;
-    if (a === 255) return false;
-    return true;
-  }
-  if (version === 6) {
-    const v = address.toLowerCase();
-    return /^[23]/.test(v) && !v.startsWith('2001:db8:');
-  }
-  return false;
-}
-
-async function validateMediaUrl(raw) {
-  let url;
-  try { url = new URL(String(raw || '')); } catch { throw new Error('URL de mídia inválida.'); }
-  if (url.protocol !== 'https:' || url.username || url.password) throw new Error('A mídia precisa usar uma URL HTTPS pública.');
-  const host = url.hostname.toLowerCase();
-  if (!host || host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') || host.endsWith('.internal')) throw new Error('Host de mídia não permitido.');
-  if (isIP(host)) throw new Error('A URL de mídia precisa usar um domínio público.');
-  let addresses;
-  try { addresses = await lookup(host, { all: true, verbatim: true }); } catch { throw new Error('Não foi possível localizar o servidor da mídia.'); }
-  if (!addresses.length || addresses.some(x => !isPublicAddress(x.address))) throw new Error('O servidor da mídia não é público.');
-  return url;
-}
-
-async function downloadMedia(rawUrl, declaredMime, mediaType) {
-  const maxBytes = mediaType === 'document' ? 16 * 1024 * 1024 : 8 * 1024 * 1024;
-  let url = await validateMediaUrl(rawUrl);
-  let response;
-  for (let redirects = 0; redirects <= 3; redirects++) {
-    response = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(15000), headers: { 'User-Agent': 'EventMenu-WhatsApp-Connect/1.0' } });
-    if (![301, 302, 303, 307, 308].includes(response.status)) break;
-    const location = response.headers.get('location');
-    if (!location || redirects === 3) throw new Error('Redirecionamento da mídia inválido.');
-    url = await validateMediaUrl(new URL(location, url).toString());
-  }
-  if (!response || !response.ok) throw new Error(`Falha ao baixar a mídia (HTTP ${response?.status || 0}).`);
-  const length = Number(response.headers.get('content-length') || 0);
-  if (length > maxBytes) throw new Error('O arquivo de mídia excede o limite permitido.');
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error('O servidor não retornou o arquivo de mídia.');
-  const chunks = []; let total = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      total += value.byteLength;
-      if (total > maxBytes) { await reader.cancel(); throw new Error('O arquivo de mídia excede o limite permitido.'); }
-      chunks.push(Buffer.from(value));
-    }
-  } finally { try { reader.releaseLock(); } catch {} }
-  const buffer = Buffer.concat(chunks, total);
-  const responseMime = String(response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
-  const suppliedMime = String(declaredMime || '').split(';')[0].trim().toLowerCase();
-  if (mediaType === 'image') {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-    const mime = allowed.includes(responseMime) ? responseMime : suppliedMime;
-    if (!allowed.includes(mime)) throw new Error('O arquivo recebido não é uma imagem JPG, PNG ou WebP válida.');
-    return { buffer, mime };
-  }
-  const mime = responseMime === 'application/pdf' ? responseMime : suppliedMime;
-  if (mime !== 'application/pdf') throw new Error('O documento enviado precisa ser um PDF válido.');
-  return { buffer, mime };
 }
 
 async function ensureSocket(sessionKey) {
@@ -267,30 +190,8 @@ async function handle(req, res) {
       if (!message || message.length > 4096) throw new Error('Mensagem inválida.');
       const state = await ensureSocket(key);
       if (!state.socket || state.status !== 'connected') throw new Error('WhatsApp não está conectado.');
-      const mediaType = String(body.media_type || '').trim().toLowerCase();
-      let content;
-      if (mediaType === 'image' || mediaType === 'document') {
-        const mediaUrl = String(body.media_url || '').trim();
-        if (!mediaUrl) throw new Error('A mensagem de mídia não contém URL.');
-        try {
-          const media = await downloadMedia(mediaUrl, body.media_mime, mediaType);
-          if (mediaType === 'image') {
-            content = { image: media.buffer, mimetype: media.mime, caption: message };
-          } else {
-            const filename = path.basename(String(body.media_filename || 'documento.pdf')).replace(/[^A-Za-z0-9._ -]/g, '').slice(0, 180) || 'documento.pdf';
-            content = { document: media.buffer, mimetype: media.mime, fileName: filename, caption: message };
-          }
-        } catch (mediaError) {
-          const fallback = await state.socket.sendMessage(`${phone}@s.whatsapp.net`, { text: message });
-          const reason = String(mediaError?.message || 'Falha ao baixar o anexo.').slice(0, 220);
-          logger.warn({ mediaType, reason }, 'WhatsApp media fallback sent as text');
-          return send(res, 200, { ok: true, message_id: String(fallback?.key?.id || ''), media_type: mediaType, media_fallback: true, media_error: reason });
-        }
-      } else {
-        content = { text: message };
-      }
-      const result = await state.socket.sendMessage(`${phone}@s.whatsapp.net`, content);
-      return send(res, 200, { ok: true, message_id: String(result?.key?.id || ''), media_type: mediaType || 'text', media_fallback: false });
+      const result = await state.socket.sendMessage(`${phone}@s.whatsapp.net`, { text: message });
+      return send(res, 200, { ok: true, message_id: String(result?.key?.id || '') });
     }
 
     return send(res, 405, { error: 'Método não permitido.' });

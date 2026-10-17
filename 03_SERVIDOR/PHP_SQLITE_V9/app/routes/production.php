@@ -10,7 +10,7 @@ use EventMenu\Services\ProductionPrintPolicyService;
 use EventMenu\Support\OperationalDiagnostics;
 
 Auth::requirePermission('production.manage');$tenantId=em_require_tenant();
-try{$unit=em_require_operating_unit('production');}catch(Throwable$e){$safe=OperationalDiagnostics::userFacing($e,'Não foi possível carregar a produção desta unidade.','web.production.unit');em_header('Produção','production');?><div class="alert error"><?= Security::e($safe['message']) ?></div><?php em_footer();return;}
+try{$unit=(new OperatingUnitService())->requireCurrent();}catch(Throwable$e){$safe=OperationalDiagnostics::userFacing($e,'Não foi possível carregar a produção desta unidade.','web.production.unit');em_header('Produção','production');?><div class="alert error"><?= Security::e($safe['message']) ?></div><?php em_footer();return;}
 $unitId=(int)$unit['id'];$config=new ProductConfigurationService();$printPolicy=new ProductionPrintPolicyService();
 if($_SERVER['REQUEST_METHOD']==='POST'){
     em_post_csrf();$action=(string)($_POST['action']??'');

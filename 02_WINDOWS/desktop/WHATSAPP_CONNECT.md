@@ -65,8 +65,3 @@ Depois do primeiro pareamento, a sessão é recuperada automaticamente. Se o PC 
 ## Build
 
 No Windows, `desktop/build-windows.ps1` publica os dois executáveis, baixa o Node.js oficial e instala as dependências do worker no pacote final. O workflow `.github/workflows/desktop-windows.yml` executa esse processo e gera os artifacts do pacote portátil e do instalador Inno Setup.
-
-
-## Envio de imagens e documentos
-
-A versão 1.0.2 do pacote inclui suporte a mídia na fila do servidor. O EventMenu Connect baixa anexos HTTPS públicos com limite de tamanho, envia imagens com legenda e documentos PDF. Se o anexo não puder ser obtido, a mensagem de texto e o link continuam sendo enviados, e o aplicativo registra um aviso. Para ativar o envio de imagens de ingressos, recompile e reinstale o Connect usando `desktop/build-windows.ps1`; a versão antiga do executável envia apenas texto.

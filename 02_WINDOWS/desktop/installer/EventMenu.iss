@@ -1,5 +1,5 @@
 #define MyAppName "EventMenu Desktop"
-#define MyAppVersion "1.0.2"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "EventMenu"
 #define MyAppExeName "EventMenu.Desktop.exe"
 #define MyWhatsAppExeName "EventMenu.WhatsAppConnect.exe"
@@ -13,7 +13,7 @@ DefaultDirName={localappdata}\Programs\EventMenu Desktop
 DefaultGroupName=EventMenu Desktop
 DisableProgramGroupPage=yes
 OutputDir=..\..\artifacts\EventMenu-Desktop-installer
-OutputBaseFilename=EventMenu-Desktop-Setup-v1.0.2
+OutputBaseFilename=EventMenu-Desktop-Setup-v1.0.1
 SetupIconFile=..\EventMenu.Desktop\Assets\EventMenu.ico
 Compression=lzma2
 SolidCompression=yes

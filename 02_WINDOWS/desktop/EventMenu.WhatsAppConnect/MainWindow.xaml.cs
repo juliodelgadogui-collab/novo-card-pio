@@ -138,7 +138,6 @@ public partial class MainWindow : Window
 
             var sent=0;
             var failed=0;
-            var mediaFallbacks=0;
             if(string.Equals(local.Status,"connected",StringComparison.OrdinalIgnoreCase))
             {
                 var claim=await _cloud.ClaimAsync(5,_shutdown.Token);
@@ -146,10 +145,9 @@ public partial class MainWindow : Window
                 {
                     try
                     {
-                        var result=await _bridge.SendAsync(message.Recipient,message.MessageText,message.MediaType,message.MediaUrl,message.MediaFilename,message.MediaMime,_shutdown.Token);
+                        var result=await _bridge.SendAsync(message.Recipient,message.MessageText,_shutdown.Token);
                         await _cloud.AckAsync(message.Id,message.ClaimToken,result.MessageId,_shutdown.Token);
                         sent++;
-                        if(result.MediaFallback)mediaFallbacks++;
                     }
                     catch(Exception ex)
                     {
@@ -157,18 +155,17 @@ public partial class MainWindow : Window
                         failed++;
                     }
                 }
-                if(sent>0||failed>0||mediaFallbacks>0)
+                if(sent>0||failed>0)
                 {
                     var state=await _cloud.StateAsync(_shutdown.Token);
                     PendingText.Text=state.Pending.ToString();
                     ActivityText.Text=sent>0?$"{sent} mensagem(ns) enviada(s) às {DateTime.Now:HH:mm:ss}.":$"Fila processada às {DateTime.Now:HH:mm:ss}.";
                     if(failed>0)ErrorText.Text=$"{failed} mensagem(ns) não puderam ser enviadas agora e voltarão para a fila.";
-                    else if(mediaFallbacks>0)ErrorText.Text=$"{mediaFallbacks} mensagem(ns) foram entregues em texto porque o anexo não pôde ser baixado. Confira a URL de mídia no painel.";
                 }
             }
 
             FooterText.Text=$"Conectado ao EventMenu • sincronizado às {DateTime.Now:HH:mm:ss}";
-            if(failed==0&&mediaFallbacks==0&&string.IsNullOrWhiteSpace(local.Error))ErrorText.Text="";
+            if(failed==0&&string.IsNullOrWhiteSpace(local.Error))ErrorText.Text="";
         }
         catch(OperationCanceledException){}
         catch(Exception ex)

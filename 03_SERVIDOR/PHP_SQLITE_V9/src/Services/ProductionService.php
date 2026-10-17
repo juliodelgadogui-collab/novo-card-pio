@@ -41,9 +41,9 @@ final class ProductionService
         $sqlite='SELECT j.*,ps.name station_name,ps.station_type,o.channel,o.status order_status,o.notes order_notes,o.created_at order_created_at,rt.name table_name,c.name customer_name,CAST((julianday(CURRENT_TIMESTAMP)-julianday(j.received_at))*1440 AS INTEGER) elapsed_minutes'.$base;try{$jobs=$pdo->prepare($sqlite);$jobs->execute([$tenantId,$unitId,$unitId]);$rows=$jobs->fetchAll();}catch(\Throwable){$mysql='SELECT j.*,ps.name station_name,ps.station_type,o.channel,o.status order_status,o.notes order_notes,o.created_at order_created_at,rt.name table_name,c.name customer_name,TIMESTAMPDIFF(MINUTE,j.received_at,NOW()) elapsed_minutes'.$base;$jobs=$pdo->prepare($mysql);$jobs->execute([$tenantId,$unitId,$unitId]);$rows=$jobs->fetchAll();}foreach($rows as&$row)$row['delayed']=(int)$row['elapsed_minutes']>(int)$row['prep_minutes']&&$row['status']!=='ready';unset($row);return['unit'=>$unit,'stations'=>$stations,'jobs'=>$rows,'print_queue'=>$this->pendingPrintQueue($pdo,$tenantId,$unitId),'version'=>$this->versionHash($rows)];
     }
 
-    public function expedition(bool $refreshPendingJobs = true):array
+    public function expedition():array
     {
-        $tenantId=Auth::tenantId();if(!$tenantId)throw new RuntimeException('Empresa inválida.');$unitId=(int)(new OperatingUnitService())->requireCurrent()['id'];if($refreshPendingJobs)$this->ensureActiveOrders();$pdo=Database::connection();$s=$pdo->prepare('SELECT o.id,o.channel,o.status,o.created_at,rt.name table_name,c.name customer_name,COUNT(j.id) jobs_total,SUM(CASE WHEN j.status IN ("ready","expedited","delivered") THEN 1 ELSE 0 END) jobs_ready,SUM(CASE WHEN j.status="cancelled" THEN 1 ELSE 0 END) jobs_cancelled,MIN(j.received_at) first_received_at FROM orders o JOIN production_jobs j ON j.order_id=o.id AND j.tenant_id=o.tenant_id LEFT JOIN restaurant_tables rt ON rt.id=o.table_id AND rt.tenant_id=o.tenant_id LEFT JOIN customers c ON c.id=o.customer_id AND c.tenant_id=o.tenant_id WHERE o.tenant_id=? AND o.unit_id=? AND o.status NOT IN ("completed","cancelled") GROUP BY o.id,o.channel,o.status,o.created_at,rt.name,c.name ORDER BY first_received_at,o.id');$s->execute([$tenantId,$unitId]);$orders=$s->fetchAll();foreach($orders as&$row){$active=max(0,(int)$row['jobs_total']-(int)$row['jobs_cancelled']);$row['all_ready']=$active>0&&(int)$row['jobs_ready']>=$active;}unset($row);return$orders;
+        $tenantId=Auth::tenantId();if(!$tenantId)throw new RuntimeException('Empresa inválida.');$unitId=(int)(new OperatingUnitService())->requireCurrent()['id'];$this->ensureActiveOrders();$pdo=Database::connection();$s=$pdo->prepare('SELECT o.id,o.channel,o.status,o.created_at,rt.name table_name,c.name customer_name,COUNT(j.id) jobs_total,SUM(CASE WHEN j.status IN ("ready","expedited","delivered") THEN 1 ELSE 0 END) jobs_ready,SUM(CASE WHEN j.status="cancelled" THEN 1 ELSE 0 END) jobs_cancelled,MIN(j.received_at) first_received_at FROM orders o JOIN production_jobs j ON j.order_id=o.id AND j.tenant_id=o.tenant_id LEFT JOIN restaurant_tables rt ON rt.id=o.table_id AND rt.tenant_id=o.tenant_id LEFT JOIN customers c ON c.id=o.customer_id AND c.tenant_id=o.tenant_id WHERE o.tenant_id=? AND o.unit_id=? AND o.status NOT IN ("completed","cancelled") GROUP BY o.id,o.channel,o.status,o.created_at,rt.name,c.name ORDER BY first_received_at,o.id');$s->execute([$tenantId,$unitId]);$orders=$s->fetchAll();foreach($orders as&$row){$active=max(0,(int)$row['jobs_total']-(int)$row['jobs_cancelled']);$row['all_ready']=$active>0&&(int)$row['jobs_ready']>=$active;}unset($row);return$orders;
     }
 
     public function changeJobStatus(int$jobId,string$target,string$reason=''):array
@@ -63,28 +63,7 @@ final class ProductionService
 
     public function recordOrderChange(PDO$pdo,int$tenantId,int$orderId,string$reason,array$payload=[]):void{$s=$pdo->prepare('SELECT id,status FROM production_jobs WHERE tenant_id=? AND order_id=? AND status NOT IN ("delivered","cancelled")');$s->execute([$tenantId,$orderId]);foreach($s->fetchAll()as$job){$pdo->prepare('UPDATE production_jobs SET change_version=change_version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND order_id=?')->execute([$job['id'],$tenantId,$orderId]);$this->logEvent($pdo,$tenantId,$orderId,(int)$job['id'],Auth::id(),'change',(string)$job['status'],(string)$job['status'],$reason,$payload);}}
 
-    /**
-     * Calcula a versao da fila sem consultar novamente o quadro quando o
-     * conjunto de itens foi passado explicitamente (inclusive se estiver vazio).
-     * Evita recursao board() -> versionHash([]) -> board() em cozinhas sem pedidos.
-     * O argumento nulo preserva a consulta sob demanda para outros chamadores.
-     */
-    public function versionHash(?array $rows = null): string
-    {
-        if ($rows === null) {
-            try {
-                $rows = $this->board()['jobs'];
-            } catch (\Throwable) {
-                $rows = [];
-            }
-        }
-
-        $parts = [];
-        foreach ($rows as $row) {
-            $parts[] = (string)$row['id'].':'.(string)$row['status'].':'.(string)($row['change_version'] ?? 1).':'.(string)($row['updated_at'] ?? '');
-        }
-        return hash('sha256', implode('|', $parts));
-    }
+    public function versionHash(array$rows=[]):string{if(!$rows){try{$board=$this->board();$rows=$board['jobs'];}catch(\Throwable){$rows=[];}}$parts=[];foreach($rows as$r)$parts[]=(string)$r['id'].':'.(string)$r['status'].':'.(string)($r['change_version']??1).':'.(string)($r['updated_at']??'');return hash('sha256',implode('|',$parts));}
 
     private function stationForUnit(PDO$pdo,int$tenantId,int$unitId,int$stationId):?array{$s=$pdo->prepare('SELECT * FROM production_stations WHERE id=? AND tenant_id=? AND active=1 AND (unit_id=? OR unit_id IS NULL) LIMIT 1');$s->execute([$stationId,$tenantId,$unitId]);$row=$s->fetch();return$row?:null;}
     private function queueAutoPrint(PDO$pdo,int$tenantId,int$unitId,int$stationId,int$orderId,?int$userId):void{$s=$pdo->prepare('SELECT printer_mode FROM production_stations WHERE id=? AND tenant_id=? AND unit_id=? AND active=1');$s->execute([$stationId,$tenantId,$unitId]);if($s->fetchColumn()!=='auto')return;$j=$pdo->prepare('SELECT id,description,quantity,status FROM production_jobs WHERE tenant_id=? AND station_id=? AND order_id=? ORDER BY id');$j->execute([$tenantId,$stationId,$orderId]);$jobs=$j->fetchAll();if(!$jobs)return;$hash=hash('sha256',json_encode($jobs,JSON_UNESCAPED_UNICODE));$sql=Database::portableSql($pdo,'INSERT IGNORE INTO production_print_queue (tenant_id,unit_id,station_id,order_id,queue_type,status,requested_by,payload_hash) VALUES (?,?,?,?,"auto","pending",?,?)');$pdo->prepare($sql)->execute([$tenantId,$unitId,$stationId,$orderId,$userId?:null,$hash]);}

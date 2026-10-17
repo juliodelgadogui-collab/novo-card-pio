@@ -47,8 +47,6 @@ public sealed class LocalSendResponse
 {
     [JsonPropertyName("ok")] public bool Ok { get; set; }
     [JsonPropertyName("message_id")] public string MessageId { get; set; } = "";
-    [JsonPropertyName("media_fallback")] public bool MediaFallback { get; set; }
-    [JsonPropertyName("media_error")] public string? MediaError { get; set; }
 }
 
 public sealed class CloudAgent
@@ -72,10 +70,6 @@ public sealed class CloudClaimMessage
     [JsonPropertyName("id")] public long Id { get; set; }
     [JsonPropertyName("recipient")] public string Recipient { get; set; } = "";
     [JsonPropertyName("message_text")] public string MessageText { get; set; } = "";
-    [JsonPropertyName("media_type")] public string? MediaType { get; set; }
-    [JsonPropertyName("media_url")] public string? MediaUrl { get; set; }
-    [JsonPropertyName("media_filename")] public string? MediaFilename { get; set; }
-    [JsonPropertyName("media_mime")] public string? MediaMime { get; set; }
     [JsonPropertyName("claim_token")] public string ClaimToken { get; set; } = "";
     [JsonPropertyName("claim_expires_at")] public string ClaimExpiresAt { get; set; } = "";
     [JsonPropertyName("attempt_count")] public int AttemptCount { get; set; }

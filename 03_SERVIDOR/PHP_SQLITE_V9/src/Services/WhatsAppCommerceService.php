@@ -46,9 +46,6 @@ final class WhatsAppCommerceService
             if($assistant->shouldTransfer($text,$assistantSettings)||($state==='WELCOME'&&$normalized==='4'))return$this->transferToHuman($pdo,$tenantId,$conversationId,$phone,$providerId,$assistantSettings);
             if(in_array($normalized,self::TRACK_COMMANDS,true)||($normalized==='meu pedido'&&(int)($conversation['draft_order_id']??0)<1)||($state==='WELCOME'&&$normalized==='3')){$reply=$this->orderCommandMessage($pdo,$tenantId,$conversation);$queued=$this->queueReply($pdo,$tenantId,$conversationId,$phone,$providerId,'order_lookup',$reply);return ['duplicate'=>false,'conversation_id'=>$conversationId,'mode'=>'auto','state'=>$state,'reply_queued'=>$queued,'commerce_enabled'=>true];}
 
-            $ticketSales=new WhatsAppTicketSalesService();
-            if($ticketSales->isTicketIntent($text)||($state==='WELCOME'&&$normalized==='5')){$reply=$ticketSales->availableEvents($pdo,$tenantId);$queued=$this->queueReply($pdo,$tenantId,$conversationId,$phone,$providerId,'ticket_sales',$reply);return ['duplicate'=>false,'conversation_id'=>$conversationId,'mode'=>'auto','state'=>$state,'reply_queued'=>$queued,'commerce_enabled'=>true,'ticket_sales'=>true];}
-
             $registration=new WhatsAppCustomerRegistrationService();
             if($registration->shouldHandle($pdo,$tenantId,$conversation,$phone)){
                 try{$result=$registration->handle($pdo,$tenantId,$conversation,$text);}catch(RuntimeException $e){$queued=$this->queueReply($pdo,$tenantId,$conversationId,$phone,$providerId,'registration_validation',"⚠️ ".$e->getMessage()."\n\nDigite *ATENDENTE* se precisar de ajuda.");return ['duplicate'=>false,'conversation_id'=>$conversationId,'mode'=>'auto','state'=>$state,'reply_queued'=>$queued,'commerce_enabled'=>true,'registration'=>true,'validation_error'=>true];}

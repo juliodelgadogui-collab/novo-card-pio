@@ -12,7 +12,7 @@ final class BrandingMediaService
     public function store(int $tenantId, array $file, string $slot): array
     {
         if ($tenantId < 1) throw new RuntimeException('Empresa inválida.');
-        if (!in_array($slot, ['brand-logo','menu-logo','menu-cover','event-banner'], true)) throw new RuntimeException('Tipo de imagem inválido.');
+        if (!in_array($slot, ['brand-logo','menu-logo','menu-cover'], true)) throw new RuntimeException('Tipo de imagem inválido.');
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) throw new RuntimeException('Não foi possível receber a imagem.');
         $tmp = (string)($file['tmp_name'] ?? '');
         if ($tmp === '' || !is_uploaded_file($tmp)) throw new RuntimeException('Upload de imagem inválido.');
@@ -52,7 +52,7 @@ final class BrandingMediaService
         parse_str($query, $params);
         if ((int)($params['t'] ?? 0) !== $tenantId) return;
         $name = (string)($params['n'] ?? '');
-        if (!preg_match('/^(brand-logo|menu-logo|menu-cover|event-banner)-[a-f0-9]{24}\.(jpg|png|webp)$/', $name)) return;
+        if (!preg_match('/^(brand-logo|menu-logo|menu-cover)-[a-f0-9]{24}\.(jpg|png|webp)$/', $name)) return;
         $path = dirname(__DIR__, 2) . '/storage/media/' . $tenantId . '/' . $name;
         if (is_file($path)) @unlink($path);
     }

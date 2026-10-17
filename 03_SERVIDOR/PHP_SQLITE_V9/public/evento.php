@@ -83,9 +83,6 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 $b=$pdo->prepare('SELECT b.*,tt.name ticket_type_name,tt.description ticket_type_description,tt.access_area,tt.capacity_total ticket_type_capacity,tt.active ticket_type_active FROM ticket_batches b LEFT JOIN ticket_types tt ON tt.id=b.ticket_type_id WHERE b.event_id=? AND b.active=1 ORDER BY COALESCE(tt.sort_order,9999),tt.name,b.id');
 $b->execute([$event['id']]);
 $batches=$b->fetchAll();
-$prefillBatchId=max(0,(int)($_GET['lote']??0));
-$prefillQuantity=max(1,min(10,(int)($_GET['q']??1)));
-if($prefillBatchId>0&&!array_filter($batches,static fn(array $batch):bool=>(int)$batch['id']===$prefillBatchId))$prefillBatchId=0;
 $count=$pdo->prepare('SELECT COUNT(*) FROM tickets WHERE tenant_id=? AND event_id=? AND status IN ("reserved","paid","checked_in")');
 $count->execute([$event['tenant_id'],$event['id']]);
 $usedCapacity=(int)$count->fetchColumn();
@@ -184,7 +181,7 @@ $scheduleItems=$scheduleStmt->fetchAll();
           <form method="post" class="buy">
             <input type="hidden" name="_csrf" value="<?= Security::e(Security::csrfToken()) ?>">
             <input type="hidden" name="batch_id" value="<?= (int)$batch['id'] ?>">
-            <label>Quantidade<select name="quantity"><?php for($i=1;$i<=min(10,$available);$i++):?><option value="<?= $i ?>"<?= $prefillBatchId===(int)$batch['id']&&$i===$prefillQuantity?' selected':'' ?>><?= $i ?></option><?php endfor;?></select></label>
+            <label>Quantidade<select name="quantity"><?php for($i=1;$i<=min(10,$available);$i++):?><option value="<?= $i ?>"><?= $i ?></option><?php endfor;?></select></label>
             <label>Nome<input name="name" required autocomplete="name"></label>
             <label>E-mail<input type="email" name="email" autocomplete="email"></label>
             <label>Telefone<input name="phone" autocomplete="tel"></label>

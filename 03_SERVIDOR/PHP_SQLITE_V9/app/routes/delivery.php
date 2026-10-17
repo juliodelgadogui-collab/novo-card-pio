@@ -11,7 +11,7 @@ use EventMenu\Support\OperationalDiagnostics;
 use EventMenu\Support\UiVocabulary;
 
 Auth::requirePermission('orders.delivery');$tenantId=em_require_tenant();
-try{$unit=em_require_operating_unit('delivery');}catch(Throwable$e){$safe=OperationalDiagnostics::userFacing($e,'Não foi possível carregar as entregas desta unidade.','web.delivery.unit');em_header('Entregas','delivery');?><div class="alert error"><?= Security::e($safe['message']) ?></div><?php em_footer();return;}
+try{$unit=(new OperatingUnitService())->requireCurrent();}catch(Throwable$e){$safe=OperationalDiagnostics::userFacing($e,'Não foi possível carregar as entregas desta unidade.','web.delivery.unit');em_header('Entregas','delivery');?><div class="alert error"><?= Security::e($safe['message']) ?></div><?php em_footer();return;}
 $unitId=(int)$unit['id'];$shift=null;try{$shift=(new WorkShiftService())->current();}catch(Throwable$e){OperationalDiagnostics::capture($e,'web.delivery.shift');}
 $isDeliveryUser=Auth::role()==='delivery';
 if($isDeliveryUser&&$shift&&$shift['unit_id']!==null&&(int)$shift['unit_id']!==$unitId){em_header('Entregas','delivery');?><div class="alert error">Seu turno de entregas está aberto em outra unidade.</div><?php em_footer();return;}

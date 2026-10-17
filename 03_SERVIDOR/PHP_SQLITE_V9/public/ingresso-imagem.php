@@ -19,28 +19,7 @@ $rgb=static function($im,string$h):int{return imagecolorallocate($im,hexdec(subs
 $im=imagecreatetruecolor(1080,1600);imagealphablending($im,true);$white=imagecolorallocate($im,255,255,255);$surface=imagecolorallocate($im,247,247,251);$dark=imagecolorallocate($im,32,29,43);$muted=imagecolorallocate($im,100,95,111);$green=imagecolorallocate($im,23,98,58);$p=$rgb($im,$primary);$scolor=$rgb($im,$secondary);
 imagefill($im,0,0,$surface);
 for($y=0;$y<500;$y++){ $ratio=$y/499;$r=(int)(hexdec(substr($secondary,1,2))*(1-$ratio)+hexdec(substr($primary,1,2))*$ratio);$g=(int)(hexdec(substr($secondary,3,2))*(1-$ratio)+hexdec(substr($primary,3,2))*$ratio);$b=(int)(hexdec(substr($secondary,5,2))*(1-$ratio)+hexdec(substr($primary,5,2))*$ratio);imageline($im,0,$y,1080,$y,imagecolorallocate($im,$r,$g,$b));}
-$banner=trim((string)($t['banner_url']??''));
-if($banner!==''){
-    try{
-        $parts=parse_url($banner);$raw=false;$sameHost=true;
-        if(is_array($parts)){
-            $path=(string)($parts['path']??'');$host=strtolower((string)($parts['host']??''));
-            $requestHost=strtolower((string)($_SERVER['HTTP_HOST']??''));$requestHost=preg_replace('/:\d+$/','',$requestHost)??$requestHost;
-            if($host!=='')$sameHost=$host===$requestHost;
-            $query=[];if(isset($parts['query']))parse_str((string)$parts['query'],$query);
-            $mediaName=(string)($query['n']??'');$mediaTenant=(int)($query['t']??0);
-            if($sameHost&&basename($path)==='media.php'&&$mediaTenant===(int)$t['tenant_id']&&preg_match('/^event-banner-[a-f0-9]{24}\.(jpg|png|webp)$/',$mediaName)){
-                $local=dirname(__DIR__).'/storage/media/'.$mediaTenant.'/'.$mediaName;
-                if(is_file($local)&&is_readable($local))$raw=@file_get_contents($local,false,null,0,8*1024*1024);
-            }elseif(strtolower((string)($parts['scheme']??''))==='https'&&$host!==''){
-                $ctx=stream_context_create(['http'=>['timeout'=>4,'user_agent'=>'EventMenu-Ticket/1.0','follow_location'=>0]]);
-                $raw=@file_get_contents($banner,false,$ctx,0,8*1024*1024);
-            }
-        }
-        $bi=$raw?@imagecreatefromstring($raw):false;
-        if($bi){$iw=imagesx($bi);$ih=imagesy($bi);$scale=max(1080/$iw,500/$ih);$dw=(int)($iw*$scale);$dh=(int)($ih*$scale);imagecopyresampled($im,$bi,(int)((1080-$dw)/2),(int)((500-$dh)/2),0,0,$dw,$dh,$iw,$ih);imagedestroy($bi);$shade=imagecolorallocatealpha($im,10,8,26,55);imagefilledrectangle($im,0,0,1080,500,$shade);}
-    }catch(Throwable){}
-}
+$banner=trim((string)($t['banner_url']??''));if($banner!==''&&str_starts_with($banner,'https://')){try{$ctx=stream_context_create(['http'=>['timeout'=>4,'user_agent'=>'EventMenu-Ticket/1.0']]);$raw=@file_get_contents($banner,false,$ctx,0,8*1024*1024);$bi=$raw?@imagecreatefromstring($raw):false;if($bi){$iw=imagesx($bi);$ih=imagesy($bi);$scale=max(1080/$iw,500/$ih);$dw=(int)($iw*$scale);$dh=(int)($ih*$scale);imagecopyresampled($im,$bi,(int)((1080-$dw)/2),(int)((500-$dh)/2),0,0,$dw,$dh,$iw,$ih);imagedestroy($bi);$shade=imagecolorallocatealpha($im,10,8,26,55);imagefilledrectangle($im,0,0,1080,500,$shade);}}catch(Throwable){}}
 imagefilledrectangle($im,0,500,1080,1600,$surface);
 $font='';foreach(['/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf','/usr/share/fonts/dejavu/DejaVuSans.ttf','/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf'] as$f){if(is_file($f)){$font=$f;break;}}
 $bold='';foreach(['/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf','/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf','/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf'] as$f){if(is_file($f)){$bold=$f;break;}}if($bold==='')$bold=$font;

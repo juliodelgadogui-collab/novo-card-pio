@@ -36,12 +36,11 @@ final class TicketWhatsAppQueueService
                 AND o.payment_status="paid"
                 AND o.status<>"cancelled"
                 AND t.status="paid"
-                AND ((e.ends_at IS NOT NULL AND e.ends_at>=CURRENT_TIMESTAMP)
-                     OR (e.ends_at IS NULL AND (e.starts_at IS NULL OR e.starts_at>=?))
-                     OR e.starts_at>=?)
+                AND (e.ends_at IS NULL OR e.ends_at>=CURRENT_TIMESTAMP)
+                AND (e.starts_at IS NULL OR e.starts_at>=?)
               ORDER BY o.id DESC
               LIMIT '.self::SCAN_LIMIT;
-        $q=$pdo->prepare($sql);$q->execute([$tenantId,$eventCutoff,$eventCutoff]);
+        $q=$pdo->prepare($sql);$q->execute([$tenantId,$eventCutoff]);
         $queued=0;
         foreach($q->fetchAll(PDO::FETCH_ASSOC)?:[] as $row){
             if($queued>=$limit)break;
@@ -65,11 +64,10 @@ final class TicketWhatsAppQueueService
                          LEFT JOIN ticket_types tt ON tt.id=b.ticket_type_id
                          WHERE o.id=? AND o.tenant_id=? AND o.channel="event" AND o.payment_status="paid"
                            AND o.status<>"cancelled" AND t.status="paid"
-                           AND ((e.ends_at IS NOT NULL AND e.ends_at>=CURRENT_TIMESTAMP)
-                                OR (e.ends_at IS NULL AND (e.starts_at IS NULL OR e.starts_at>=?))
-                                OR e.starts_at>=?)
+                           AND (e.ends_at IS NULL OR e.ends_at>=CURRENT_TIMESTAMP)
+                           AND (e.starts_at IS NULL OR e.starts_at>=?)
                          ORDER BY t.id ASC');
-        $q->execute([$orderId,$tenantId,$eventCutoff,$eventCutoff]);$tickets=$q->fetchAll(PDO::FETCH_ASSOC)?:[];
+        $q->execute([$orderId,$tenantId,$eventCutoff]);$tickets=$q->fetchAll(PDO::FETCH_ASSOC)?:[];
         if(!$tickets)return 0;
 
         $recipient=$this->normalizePhone((string)($tickets[0]['customer_phone']??''));
@@ -83,8 +81,8 @@ final class TicketWhatsAppQueueService
             if($exists->fetchColumn())continue;
 
             $customer=trim((string)($row['customer_name']??''));$event=trim((string)($row['event_name']??''));
-            $ticketUrl=$this->httpsPublicUrl(\app_absolute_url('ingresso.php?t='.rawurlencode($qr)));
-            $imageUrl=$this->httpsPublicUrl(\app_absolute_url('ingresso-imagem.php?t='.rawurlencode($qr).'&ticket_id='.$ticketId));
+            $ticketUrl=\app_absolute_url('ingresso.php?t='.rawurlencode($qr));
+            $imageUrl=\app_absolute_url('ingresso-imagem.php?t='.rawurlencode($qr).'&ticket_id='.$ticketId);
             $details=[];if(!empty($row['starts_at']))$details[]=date('d/m/Y · H:i',strtotime((string)$row['starts_at']));
             if(trim((string)($row['venue']??''))!=='')$details[]=trim((string)$row['venue']);
             $message='Olá'.($customer!==''?', '.$customer:'').'! 🎟️'."\n\n"
@@ -99,17 +97,6 @@ final class TicketWhatsAppQueueService
             }catch(Throwable $e){$exists->execute([$key]);if(!$exists->fetchColumn())throw $e;}
         }
         return $queued;
-    }
-
-    private function httpsPublicUrl(string $url): string
-    {
-        $parts=parse_url(trim($url));
-        if(!is_array($parts)||empty($parts['host']))return$url;
-        $scheme=strtolower((string)($parts['scheme']??''));$host=(string)$parts['host'];$port=isset($parts['port'])?(int)$parts['port']:null;
-        if($scheme==='http'&&!in_array(strtolower($host),['localhost','127.0.0.1','::1'],true)){$scheme='https';if($port===80)$port=null;}
-        $includePort=$port!==null&&!(($scheme==='https'&&$port===443)||($scheme==='http'&&$port===80));
-        $authority=$host.($includePort?':'.$port:'');
-        $result=$scheme.'://'.$authority.($parts['path']??'/');if(isset($parts['query']))$result.='?'.$parts['query'];if(isset($parts['fragment']))$result.='#'.$parts['fragment'];return$result;
     }
 
     private function normalizePhone(string $value): string

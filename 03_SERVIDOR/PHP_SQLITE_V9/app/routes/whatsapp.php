@@ -103,13 +103,6 @@ $assistantSettings=$assistantService->settings($pdo,$tenantId);$knowledgeItems=$
 $statusLabel=match($status){'connected'=>'Conectado','starting'=>'Iniciando','qr'=>'Aguardando pareamento no Connect','reconnecting'=>'Reconectando','error'=>'Precisa de atenção',default=>'Desconectado'};
 $statusTone=match($status){'connected'=>'success','starting','qr','reconnecting'=>'warning','error'=>'danger',default=>'muted'};
 $pollUrl=json_encode(app_url('whatsapp.php?ajax=status'),JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
-$outboxSummary=['pending'=>0,'sending'=>0,'sent'=>0,'failed'=>0];$recentFailures=[];$ticketImageReady=function_exists('imagecreatetruecolor')&&class_exists('Endroid\\QrCode\\QrCode')&&class_exists('Endroid\\QrCode\\Writer\\PngWriter');$appUrlForMedia=trim((string)env('APP_URL',''));$ticketMediaUrlReady=filter_var($appUrlForMedia,FILTER_VALIDATE_URL)!==false&&strtolower((string)parse_url($appUrlForMedia,PHP_URL_SCHEME))==='https';
-try{
-    $since=gmdate('Y-m-d H:i:s',time()-7*86400);
-    $oq=$pdo->prepare('SELECT status,COUNT(*) total FROM whatsapp_outbox WHERE tenant_id=? AND created_at>=? GROUP BY status');$oq->execute([$tenantId,$since]);
-    foreach($oq->fetchAll(PDO::FETCH_ASSOC)?:[] as$orow){$st=(string)$orow['status'];$n=(int)$orow['total'];if(in_array($st,['queued','desktop_queued'],true))$outboxSummary['pending']+=$n;elseif($st==='desktop_sending')$outboxSummary['sending']+=$n;elseif($st==='sent')$outboxSummary['sent']+=$n;elseif(in_array($st,['failed','desktop_failed','error'],true))$outboxSummary['failed']+=$n;}
-    $fq=$pdo->prepare("SELECT event_type,recipient,status,attempt_count,max_attempts,last_error,updated_at FROM whatsapp_outbox WHERE tenant_id=? AND status IN ('desktop_failed','failed','error') AND created_at>=? ORDER BY updated_at DESC,id DESC LIMIT 8");$fq->execute([$tenantId,$since]);$recentFailures=$fq->fetchAll(PDO::FETCH_ASSOC)?:[];
-}catch(Throwable){$recentFailures=[];}
 
 em_header('WhatsApp','whatsapp');
 ?>
@@ -131,21 +124,9 @@ em_header('WhatsApp','whatsapp');
   <div class="alert"><strong>Conexão no aparelho:</strong> para parear, reconectar, trocar número ou encerrar a sessão, abra o EventMenu Connect. Este painel não gera QR/código e não mantém credenciais do WhatsApp na hospedagem.</div>
 </section>
 
-<section class="card" id="whatsapp-delivery-diagnostics">
-  <div class="section-head"><div><span class="eyebrow">DIAGNÓSTICO DE ENVIO</span><h2>Fila de mensagens — últimos 7 dias</h2><p class="muted">O painel mostra se as mensagens ficaram na fila, foram enviadas ou falharam no EventMenu Connect.</p></div></div>
-  <div class="alert <?=($ticketImageReady&&$ticketMediaUrlReady)?'ok':'warning'?>"><strong>Entrega da imagem do ingresso:</strong> <?=($ticketImageReady&&$ticketMediaUrlReady)?'configuração local detectada como pronta. O EventMenu Connect precisa estar atualizado para anexar a imagem.':'verifique a configuração do servidor.'?><?php if(!$ticketImageReady):?><br>O PHP precisa da extensão GD e do pacote Endroid QR Code com suporte a PNG.<?php endif;?><?php if(!$ticketMediaUrlReady):?><br>Configure <code>APP_URL</code> com a URL pública HTTPS do sistema para que o Connect consiga baixar o ingresso.<?php endif;?></div>
-  <div class="metric-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">
-    <div class="metric-card"><span>Aguardando</span><strong><?=(int)$outboxSummary['pending']?></strong></div>
-    <div class="metric-card"><span>Em envio</span><strong><?=(int)$outboxSummary['sending']?></strong></div>
-    <div class="metric-card"><span>Enviadas</span><strong><?=(int)$outboxSummary['sent']?></strong></div>
-    <div class="metric-card"><span>Falhas</span><strong><?=(int)$outboxSummary['failed']?></strong></div>
-  </div>
-  <?php if($recentFailures):?><div class="table-wrap" style="margin-top:14px"><table class="table"><thead><tr><th>Atualizada</th><th>Tipo</th><th>Destino</th><th>Tentativas</th><th>Erro registrado</th></tr></thead><tbody><?php foreach($recentFailures as$failure):?><tr><td><?=Security::e((string)($failure['updated_at']??''))?></td><td><?=Security::e((string)($failure['event_type']??'mensagem'))?></td><td>••••<?=Security::e(substr(preg_replace('/\D+/','',(string)($failure['recipient']??''))??'',-4))?></td><td><?=(int)($failure['attempt_count']??0)?> / <?=(int)($failure['max_attempts']??0)?></td><td><?=Security::e(mb_substr((string)($failure['last_error']??'Falha sem detalhe retornado.'),0,240))?></td></tr><?php endforeach;?></tbody></table></div><?php else:?><p class="muted" style="margin-top:12px">Nenhuma falha de envio registrada nesta janela. Se uma mensagem não chegou, confira se o Connect permanece conectado e veja se o destinatário usa um número válido.</p><?php endif;?>
-</section>
-
 <section class="card">
   <div class="section-head"><div><span class="eyebrow">WHATSAPP COMMERCE</span><h2>Pedidos e conversas automáticas</h2></div><span class="badge status-<?=$commerceEnabled?'success':'muted'?>"><?=$commerceEnabled?'Ativo':'Pausado'?></span></div>
-  <p class="muted">Quando ativo, mensagens recebidas pelo EventMenu Connect entram no servidor, seguem o fluxo de cardápio/pedido e as respostas voltam pela mesma fila segura. O cliente também pode digitar <strong>INGRESSOS</strong> ou escolher a opção <strong>5 — Comprar ingresso</strong>; a compra é finalizada no checkout oficial do evento e o ingresso individual é enviado aqui após a confirmação do pagamento.</p>
+  <p class="muted">Quando ativo, mensagens recebidas pelo EventMenu Connect entram no servidor, seguem o fluxo de cardápio/pedido e as respostas voltam pela mesma fila segura.</p>
   <form method="post" class="form-grid" id="commerceForm"><input type="hidden" name="_csrf" value="<?=em_csrf()?>"><input type="hidden" name="action" value="save_commerce"><label class="checkbox span-2"><input type="checkbox" name="commerce_enabled"<?=em_checked($commerceEnabled)?>> Ativar WhatsApp Commerce nesta empresa</label><div class="span-2"><span class="badge status-warning" id="commerceUnsaved" hidden>Alteração não salva</span></div><div class="span-2 actions"><button class="primary" type="submit">Salvar WhatsApp Commerce</button></div></form>
 </section>
 

@@ -14,7 +14,7 @@ use EventMenu\Services\PaymentService;
 
 Auth::requirePermission('orders.view');
 $tenantId=em_require_tenant();
-try{$unit=em_require_operating_unit('orders');}
+try{$unit=(new OperatingUnitService())->requireCurrent();}
 catch(Throwable$e){em_header('Pedidos','orders');?><div class="alert error"><?=Security::e($e->getMessage())?></div><?php em_footer();return;}
 $unitId=(int)$unit['id'];
 

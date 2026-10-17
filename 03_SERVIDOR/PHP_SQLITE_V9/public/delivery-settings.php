@@ -74,7 +74,7 @@ $creditChecked=!array_key_exists('credit_enabled',$mp)||!empty($mp['credit_enabl
 em_header('Configurações do Delivery','delivery');
 ?>
 <section class="page-hero"><div><span class="eyebrow">EVENTMENU DELIVERY</span><h2>Loja, entrega e pagamento</h2><p>Controle o que o cliente vê no app e quais pagamentos pode usar sem sair do EventMenu.</p></div><div class="hero-actions"><a class="button secondary" href="<?=Security::e(app_url('?route=delivery'))?>">Voltar ao Delivery</a><a class="button secondary" href="<?=Security::e(app_url('bank-pix-settings.php'))?>">Pix Efí / Inter</a></div></section>
-<!-- Flash messages are already rendered by em_header(). -->
+<?php em_flash_render(); ?>
 <form method="post" class="grid" style="gap:16px"><input type="hidden" name="_csrf" value="<?=Security::e(Security::csrfToken())?>">
 <section class="card"><div class="section-head"><div><span class="eyebrow">OPERAÇÃO</span><h3>Entrega da <?=Security::e((string)$tenant['name'])?></h3></div></div>
 <label><input type="checkbox" name="delivery_paused" value="1" <?=$settings['delivery_paused']??false?'checked':''?>> Pausar novos pedidos do aplicativo</label>

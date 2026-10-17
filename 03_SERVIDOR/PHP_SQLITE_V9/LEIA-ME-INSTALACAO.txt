@@ -1,36 +1,72 @@
-CARDAPIO - V9.7 - CORRECAO COZINHA / KDS
-===========================================
-ATENCAO: apenas para a instalacao /home/gestorstore/go.gestao2.store/1/
+EVENTMENU PREMIUM — PRIMEIRA INSTALAÇÃO /1 — SQLITE
 
-CAUSA IDENTIFICADA NO CODIGO
-Em ProductionService::board(), versionHash($rows) era chamada inclusive quando
-$rows estava vazio. versionHash([]) invocava board() novamente, provocando
-recursao infinita se a fila do KDS nao tinha itens. Isso pode travar o PHP,
-consumir recursos e produzir erro 503 ou ERR_CONNECTION_ABORTED.
+Este pacote foi gerado do HEAD atual do GitHub e foi preparado para um servidor totalmente vazio.
+O Composer NÃO precisa estar instalado no servidor: a pasta vendor já acompanha o pacote.
 
-ALTERACOES
-1. src/Services/ProductionService.php
-   - versionHash usa parametro ?array = null e diferencia [] de null.
-   - A fila vazia agora gera hash estavel e nao provoca novas consultas.
-   - expedition(bool $refreshPendingJobs = true): opcao para nao repetir a
-     sincronizacao pesada depois de board(), mantendo comportamento original
-     por padrao para API, desktop e outros chamadores.
-2. app/routes/kitchen.php
-   - Mantem a captura de erros V9.6.
-   - Chama expedition(false) pois board() ja sincronizou os pedidos.
+REQUISITOS DO SERVIDOR
+- PHP 8.2 ou superior.
+- Extensões: PDO, pdo_sqlite, mbstring, curl e openssl.
+- HTTPS recomendado desde a primeira instalação.
+- Apache/LiteSpeed com .htaccess habilitado, ou regras equivalentes no Nginx.
+- Permissão de escrita para a pasta do sistema durante a instalação e para storage depois.
+- WhatsApp: NÃO requer Node.js, WPPConnect, Chrome/Chromium ou Baileys na hospedagem.
 
-INSTALACAO VIA CPANEL
-1. Faca copia dos DOIS arquivos atuais.
-2. Extraia o ZIP em /home/gestorstore/go.gestao2.store/1/ mantendo a estrutura
-   das pastas. Confirme a substituicao APENAS destes 2 arquivos.
-3. Verifique a sintaxe pelo Terminal:
-   cd "$HOME/go.gestao2.store/1" && php -l src/Services/ProductionService.php && php -l app/routes/kitchen.php
-4. Teste https://go.gestao2.store/1/?route=kitchen (logado no sistema).
-5. Se ainda mostrar 503, consulte os logs e envie a referencia do erro.
+INSTALAÇÃO DO ZERO
+1. Crie/abra a pasta /1 no domínio.
+2. Envie TODO o conteúdo deste pacote para essa pasta.
+3. NÃO crie banco de dados manualmente.
+4. NÃO é obrigatório renomear .env.example: se .env não existir, o instalador cria automaticamente.
+5. Acesse https://SEU-DOMINIO/1/install.php.
+6. Confira se todos os requisitos aparecem com ✅.
+7. Informe a URL, empresa inicial e os dados do Super ADM.
+8. Clique em "Instalar EventMenu com SQLite".
+9. O sistema criará automaticamente:
+   - .env com APP_KEY e CRON_SECRET aleatórios;
+   - storage/eventmenu.sqlite;
+   - schema e migrações atuais;
+   - empresa inicial;
+   - usuário Super ADM;
+   - storage/installed.lock para bloquear nova instalação.
+10. Entre em https://SEU-DOMINIO/1/.
+11. Configure o cron do servidor para executar a cada minuto:
 
-NENHUMA migracao SQL, alteracao de credenciais ou alteracao de dados.
-COMPATIVEL com a V9.6 em uso. NAO substitua o sistema completo.
+   * * * * * php /CAMINHO/DO/SITE/1/cron.php >/dev/null 2>&1
 
-VALIDACAO LOCAL
-Sintaxe PHP dos dois arquivos; teste de regressao do hash vazio.
-Nao foi possivel executar teste de producao hospedado neste ambiente.
+12. Entre como Super ADM, abra "Saúde do sistema" e confirme que Cron e Worker aparecem como OK.
+
+WHATSAPP / EVENTMENU CONNECT
+- O servidor NÃO executa Node.js, WPPConnect ou Baileys.
+- Instale e configure o aplicativo EventMenu Connect no aparelho responsável.
+- Pareamento, sessão, reconexão e envio real do WhatsApp acontecem dentro do EventMenu Connect.
+- O servidor mantém somente filas, conversas, automações, leases e ACKs consumidos pela API do Connect.
+- No painel do EventMenu, abra Configurações > WhatsApp para ativar automações e acompanhar o estado do Connect.
+- Use a Central de Atendimento para conversas humanas. O navegador nunca acessa diretamente o Baileys.
+
+CRON / MANUTENÇÃO AUTOMÁTICA
+- O cron é obrigatório em produção e deve executar a cada minuto.
+- Ele processa filas assíncronas, notificações push, expirações, limpezas e o agendamento do backup automático.
+- O envio de WhatsApp NÃO é executado pelo cron: o EventMenu Connect consome a fila pela API autenticada.
+- Prefira a execução CLI acima: ela NÃO precisa expor o CRON_SECRET.
+- Se o seu provedor só aceitar chamada HTTP, o endpoint cron.php exige o cabeçalho X-Cron-Secret com o valor protegido do .env.
+- O painel Super ADM > Saúde do sistema mostra o caminho real do cron.php e informa se Cron/Worker estão atrasados.
+
+BANCO INICIAL
+- Banco: SQLite.
+- Arquivo: storage/eventmenu.sqlite.
+- WAL e foreign keys são ativados automaticamente.
+- Nunca disponibilize storage publicamente.
+- Faça backup periódico do banco antes de atualizações importantes.
+
+ATUALIZAÇÕES
+- Envie os novos arquivos preservando .env e toda a pasta storage.
+- Entre como administrador autorizado e acesse /1/update.php para aplicar migrações.
+- NUNCA substitua storage/eventmenu.sqlite por um arquivo vazio durante atualização.
+
+SEGURANÇA
+- O .htaccess do pacote bloqueia .env, app, src, database, storage, vendor e public em Apache/LiteSpeed.
+- Em Nginx, replique esses bloqueios no virtual host.
+- SESSION_SECURE é ativado automaticamente quando a URL informada usa HTTPS.
+- Depois de instalado, install.php é bloqueado por installed.lock e pela existência do Super ADM.
+
+MIGRAÇÃO FUTURA PARA MYSQL/MARIADB
+O sistema mantém suporte a MySQL/MariaDB, mas a primeira instalação deste pacote usa SQLite conforme definido para a fase inicial do projeto.
