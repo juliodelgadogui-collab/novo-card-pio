@@ -180,7 +180,7 @@ final class WhatsAppCommerceOrderService
     /** @return array<string,mixed> */
     private function categoriesResult(PDO $pdo,int $tenantId,int $conversationId,array $context,string $prefix=''):array
     {
-        $page=max(0,(int)($context['category_page']??0));$rows=$this->categories($pdo,$tenantId,$page);if(!$rows)throw new RuntimeException('Nenhuma categoria com produtos está disponível agora.');$shown=array_slice($rows,0,self::PAGE_SIZE);$lines=[];if($prefix!=='')$lines[]='⚠️ '.$prefix;$lines[]='';$lines[]='🍽️ *Escolha uma categoria:*';$lines[]='';foreach($shown as$i=>$row)$lines[]=($i+1).' - '.(string)$row['name'];if(count($rows)>self::PAGE_SIZE)$lines[]='9 - Mais categorias';if($page>0)$lines[]='Digite *ANTERIOR* para voltar uma página.';$lines[]='0 - Voltar ao início';$context['category_page']=$page;return $this->stateResult($pdo,$tenantId,$conversationId,'SELECTING_CATEGORY',$context,trim(implode("\n",$lines)),'categories');
+        $page=max(0,(int)($context['category_page']??0));$rows=$this->categories($pdo,$tenantId,$page);if(!$rows)return $this->stateResult($pdo,$tenantId,$conversationId,'WELCOME',[],"No momento, não há produtos ativos disponíveis para pedido pelo WhatsApp.\n\nTente novamente mais tarde ou digite *ATENDENTE* para falar com a equipe.",'catalog_empty');$shown=array_slice($rows,0,self::PAGE_SIZE);$lines=[];if($prefix!=='')$lines[]='⚠️ '.$prefix;$lines[]='';$lines[]='🍽️ *Escolha uma categoria:*';$lines[]='';foreach($shown as$i=>$row)$lines[]=($i+1).' - '.(string)$row['name'];if(count($rows)>self::PAGE_SIZE)$lines[]='9 - Mais categorias';if($page>0)$lines[]='Digite *ANTERIOR* para voltar uma página.';$lines[]='0 - Voltar ao início';$context['category_page']=$page;return $this->stateResult($pdo,$tenantId,$conversationId,'SELECTING_CATEGORY',$context,trim(implode("\n",$lines)),'categories');
     }
 
     /** @return array<string,mixed> */
@@ -261,11 +261,37 @@ final class WhatsAppCommerceOrderService
 
     /** @return array<int,array<string,mixed>> */
     private function categories(PDO $pdo,int $tenantId,int $page):array
-    { $offset=max(0,$page)*self::PAGE_SIZE;$sql='SELECT c.id,c.name FROM categories c WHERE c.tenant_id=? AND c.active=1 AND EXISTS (SELECT 1 FROM products p WHERE p.tenant_id=c.tenant_id AND p.category_id=c.id AND p.active=1) ORDER BY c.sort_order,c.id LIMIT '.(self::PAGE_SIZE+1).' OFFSET '.$offset;$q=$pdo->prepare($sql);$q->execute([$tenantId]);return $q->fetchAll(PDO::FETCH_ASSOC)?:[]; }
+    {
+        $offset=max(0,$page)*self::PAGE_SIZE;
+        $sql="SELECT id,name FROM (
+            SELECT c.id AS id,c.name AS name,c.sort_order AS sort_order,c.id AS sort_id
+            FROM categories c
+            WHERE c.tenant_id=? AND c.active=1
+              AND EXISTS (SELECT 1 FROM products p WHERE p.tenant_id=c.tenant_id AND p.category_id=c.id AND p.active=1)
+            UNION ALL
+            SELECT 0 AS id,'Outros' AS name,2147483647 AS sort_order,0 AS sort_id
+            WHERE EXISTS (
+                SELECT 1 FROM products p
+                LEFT JOIN categories c ON c.id=p.category_id AND c.tenant_id=p.tenant_id AND c.active=1
+                WHERE p.tenant_id=? AND p.active=1 AND c.id IS NULL
+            )
+        ) available_categories ORDER BY sort_order,sort_id LIMIT ".(self::PAGE_SIZE+1)." OFFSET ".$offset;
+        $q=$pdo->prepare($sql);$q->execute([$tenantId,$tenantId]);return $q->fetchAll(PDO::FETCH_ASSOC)?:[];
+    }
 
     /** @return array<int,array<string,mixed>> */
     private function products(PDO $pdo,int $tenantId,int $categoryId,int $page):array
-    { $offset=max(0,$page)*self::PAGE_SIZE;$sql='SELECT id,name,price_cents FROM products WHERE tenant_id=? AND category_id=? AND active=1 ORDER BY name,id LIMIT '.(self::PAGE_SIZE+1).' OFFSET '.$offset;$q=$pdo->prepare($sql);$q->execute([$tenantId,$categoryId]);return $q->fetchAll(PDO::FETCH_ASSOC)?:[]; }
+    {
+        $offset=max(0,$page)*self::PAGE_SIZE;
+        if($categoryId===0){
+            $sql="SELECT p.id,p.name,p.price_cents FROM products p WHERE p.tenant_id=? AND p.active=1 AND NOT EXISTS (SELECT 1 FROM categories c WHERE c.id=p.category_id AND c.tenant_id=p.tenant_id AND c.active=1) ORDER BY p.name,p.id LIMIT ".(self::PAGE_SIZE+1)." OFFSET ".$offset;
+            $q=$pdo->prepare($sql);$q->execute([$tenantId]);
+        }else{
+            $sql="SELECT p.id,p.name,p.price_cents FROM products p JOIN categories c ON c.id=p.category_id AND c.tenant_id=p.tenant_id AND c.active=1 WHERE p.tenant_id=? AND p.category_id=? AND p.active=1 ORDER BY p.name,p.id LIMIT ".(self::PAGE_SIZE+1)." OFFSET ".$offset;
+            $q=$pdo->prepare($sql);$q->execute([$tenantId,$categoryId]);
+        }
+        return $q->fetchAll(PDO::FETCH_ASSOC)?:[];
+    }
 
     /** @return array<int,array<string,mixed>> */
     private function cartItems(PDO $pdo,int $tenantId,int $draftId):array

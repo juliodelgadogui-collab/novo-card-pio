@@ -1,0 +1,23 @@
+CARDÁPIO — PROJETO COMPLETO COM ATUALIZAÇÕES V9.13
+
+Este pacote reúne o projeto completo organizado, incluindo Android, Windows, servidor PHP/SQLite, documentação e o arquivo original com as 164 branches.
+
+PASTAS PRINCIPAIS
+01_APK_ANDROID/      Fontes Android GO, DELIVERY e CONNECT.
+02_WINDOWS/          Fontes do programa Windows e integrações WhatsApp.
+03_SERVIDOR/         Servidor PHP/SQLite, portal de APKs e scripts-fonte.
+04_REFERENCIAS_DE_BRANCHES/ Referências das branches e arquivo original de todas as 164 branches.
+05_DOCUMENTACAO/     Documentação, workflows e manifestos.
+
+ATUALIZAÇÕES INTEGRADAS
+- Atualização do código do servidor V9.13.
+- Aplicação do patch integrado V9.13 aos arquivos correspondentes.
+- Atualização dos fontes Windows/WhatsApp Connect e worker de WhatsApp.
+- Os patches originais e o pacote completo do servidor foram preservados em 05_DOCUMENTACAO/ATUALIZACOES_V9_13/.
+
+IMPORTANTE
+- Este é um pacote de código-fonte, não uma promessa de APK/EXE recém-compilado.
+- Não envie este ZIP integral diretamente para a hospedagem. Para atualizar o site, trabalhe com o conteúdo de 03_SERVIDOR/PHP_SQLITE_V9/ e faça backup dos arquivos e banco de dados antes de substituir arquivos.
+- Preserve o arquivo .env e o banco de dados já existente na hospedagem; não os substitua por valores de exemplo.
+- O Connect atualizado precisa ser reconstruído e reinstalado no computador que mantém a sessão WhatsApp para que as mudanças no worker sejam aplicadas.
+- A validação ponta a ponta de pagamentos, envio real de mensagens, compilação de APK e compilação de EXE depende do ambiente de implantação e não é garantida somente pela geração deste arquivo.

@@ -1,0 +1,24 @@
+CARDÁPIO V9.12 — CORREÇÃO RESPONSIVA GERAL DO PAINEL DAS EMPRESAS
+
+As capturas mostram cartões e colunas se espremendo ou ultrapassando a largura do celular em Visão geral, Clientes e pontos, Compras, Estoque/Inventário e Produção.
+
+Causa identificada no CSS: algumas páginas mantêm grids com duas colunas e estilos inline, incluindo colunas mínimas de 280–320 px, e o CSS móvel anterior não substitui essas regras nas páginas da empresa.
+
+Esta versão corrige esses grids e formulários em telas estreitas, empilha os painéis, mantém indicadores em duas colunas quando cabem e coloca a rolagem horizontal dentro das tabelas largas.
+
+IMPORTANTE: este hotfix substitui SOMENTE a folha de estilo workspace-v8-mobilefix.css. Não substitui app/admin_helpers.php nem arquivos PHP, não remove botões, não altera rotas, permissões, pedidos ou o banco de dados.
+
+ARQUIVOS INCLUÍDOS:
+- assets/workspace-v8-mobilefix.css
+- public/assets/workspace-v8-mobilefix.css
+
+INSTALAÇÃO:
+1. Envie o ZIP para /home/gestorstore/go.gestao2.store/1/.
+2. Crie backup da folha de estilo atual:
+   cp -p public/assets/workspace-v8-mobilefix.css "$HOME/workspace-v8-mobilefix.css.bak.$(date +%Y%m%d_%H%M%S)"
+3. Extraia o ZIP na raiz /home/gestorstore/go.gestao2.store/1/, mantendo os caminhos.
+4. Confirme que o CSS existe:
+   test -s public/assets/workspace-v8-mobilefix.css && echo "CSS instalado"
+5. No celular, feche e reabra a página ou atualize-a. O servidor usa a versão do arquivo na URL do CSS para evitar cache antigo.
+
+Não execute install.php nem update.php para este hotfix.

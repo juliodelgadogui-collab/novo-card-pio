@@ -1,0 +1,23 @@
+CARDÁPIO V9.10 — RESTAURAÇÃO DE BOTÕES E MENU MOBILE
+
+Este pacote corrige uma regressão do hotfix V9.9: restaura links/itens de navegação existentes, mantendo o seletor móvel de unidade e o layout Super ADM.
+
+Itens restaurados:
+- WhatsApp e Connect
+- Enviar comunicados
+- Personalização do cardápio
+- Clientes cadastrados (Super ADM)
+- Configurar e-mail SMTP
+- Destinos especiais de WhatsApp e personalização do cardápio
+
+Arquivos incluídos:
+- app/admin_helpers.php
+- public/assets/platform-saas-v9.css
+
+Instalação:
+1. Faça backup dos dois arquivos atuais.
+2. Extraia o ZIP na raiz /home/gestorstore/go.gestao2.store/1/ mantendo os caminhos.
+3. Execute: php -l app/admin_helpers.php
+4. Atualize a página com Ctrl+F5 ou limpe o cache do navegador.
+
+Não executa migrações nem altera dados do banco. Confirme o funcionamento no site após a instalação.

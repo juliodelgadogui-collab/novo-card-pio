@@ -1,0 +1,35 @@
+CARDAPIO / EVENTMENU — CORRECAO V9.8
+Unidade no celular, banner de evento e endereco publico do cardapio
+
+PASTA DE DESTINO
+/home/gestorstore/go.gestao2.store/1/
+
+O QUE ESTA CORRIGIDO
+1. O seletor de Unidade de operacao passa a aparecer no celular. O cabeçalho principal e ocultado no layout mobile; agora ha um seletor visivel no inicio do conteudo quando a conta possui varias unidades ou nenhuma unidade foi selecionada.
+2. Eventos aceitam upload real de capa/banner, tanto no formulario Criar/Editar Evento quanto em Eventos > Gerenciar evento > Pagina publica. O sistema aceita JPG, PNG e WebP, ate 5 MB, dimensoes maximas 6000 x 6000 px. Recomendacao visual: 1600 x 900 px (16:9). A imagem e guardada em storage/media e servida pela rota controlada media.php.
+3. O cardapio publico mostra o endereco fisico da unidade. Se a unidade nao tiver endereco, usa o endereco configurado em Configuracoes de impressao/recibo. O cardapio tambem apresenta um link para abrir a rota no Google Maps.
+4. Preserva a correcao V9.7 da Cozinha/KDS (evita recursao com fila vazia e nao repete a sincronizacao ao carregar o painel).
+
+INSTALACAO SEGURA
+1. Faca backup dos arquivos existentes antes de substituir.
+2. Extraia o ZIP dentro de /home/gestorstore/go.gestao2.store/1/ preservando os caminhos das pastas.
+3. Substitua somente os arquivos listados no ZIP.
+4. Nao ha migracao de banco de dados nesta atualizacao.
+5. Apos atualizar, recarregue o painel no celular. Se necessario, feche e reabra a aba para atualizar o CSS.
+
+ARQUIVOS INCLUIDOS
+app/admin_helpers.php
+app/routes/event-admin.php
+app/routes/events.php
+app/routes/kitchen.php
+app/routes/units.php
+public/assets/menu-premium-v5.css
+public/assets/premium-v5.css
+public/media.php
+public/menu.php
+public/loja.php
+src/Services/BrandingMediaService.php
+src/Services/ProductionService.php
+
+VALIDACAO LOCAL
+Os arquivos PHP alterados passaram em php -l. O pacote nao altera pedidos, ingressos, configuracoes do banco nem outros dados persistidos.

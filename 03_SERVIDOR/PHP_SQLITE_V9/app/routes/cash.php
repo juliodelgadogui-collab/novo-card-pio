@@ -8,6 +8,7 @@ use EventMenu\Services\CashService;
 
 Auth::requirePermission('cash.manage');
 $tenantId=em_require_tenant();
+$unit=em_require_operating_unit('cash');
 $service=new CashService();
 $toCents=static function(string $value):int{
     $value=trim($value);

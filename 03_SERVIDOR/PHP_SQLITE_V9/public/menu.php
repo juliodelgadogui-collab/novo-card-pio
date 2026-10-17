@@ -186,7 +186,7 @@ $deliveryFee=max(0,(int)($settings['delivery_fee_cents']??0));
 $minimum=max(0,(int)($settings['min_delivery_order_cents']??0));
 $title=trim((string)($settings['menu_public_title']??''))?:$tenant['name'];
 $subtitle=trim((string)($settings['menu_subtitle']??''))?:'Sabor, praticidade e uma experiência feita para você.';
-$primary=menu_color($settings['menu_primary_color']??'','#226b50');
+$primary=menu_color($settings['menu_primary_color']??'','#6236df');
 $background=menu_color($settings['menu_background_color']??'','#f7f7fb');
 $surface=menu_color($settings['menu_surface_color']??'','#ffffff');
 $text=menu_color($settings['menu_text_color']??'','#242136');
@@ -201,6 +201,13 @@ $whatsapp=preg_replace('/\D+/','',(string)($settings['whatsapp']??''))?:'';
 $canonical=app_url('menu.php?empresa='.rawurlencode($slug).'&unidade='.rawurlencode($unitCode));
 $changeUnitUrl=app_url('loja.php?empresa='.rawurlencode($slug));
 $unitAddress=trim((string)($selectedUnit['address']??''));
+if($unitAddress===''){
+    foreach(['street_address','business_address','address','receipt_address'] as $addressKey){
+        $candidate=trim((string)($settings[$addressKey]??''));
+        if($candidate!==''){$unitAddress=$candidate;break;}
+    }
+}
+$unitMapsUrl=$unitAddress!==''?'https://www.google.com/maps/search/?api=1&query='.rawurlencode($unitAddress):'';
 $storageKey='eventmenu:menu:'.$tenantId.':'.$publicUnitId.':'.($table?(int)$table['id']:0);
 $cartBackup=array_values(array_map(static fn(array$line):array=>[
     'product_id'=>(int)($line['product_id']??0),
@@ -218,10 +225,9 @@ $cartBackup=array_values(array_map(static fn(array$line):array=>[
 <meta name="description" content="<?= Security::e($subtitle) ?>">
 <link rel="canonical" href="<?= Security::e($canonical) ?>">
 <link rel="stylesheet" href="<?= Security::e(app_url('assets/menu-premium-v5.css')) ?>">
-<link rel="stylesheet" href="<?= Security::e(app_url('assets/storefront-v8.css?v=20261016v8')) ?>">
 <style>:root{--em-bg:<?= Security::e($background) ?>;--em-surface:<?= Security::e($surface) ?>;--em-text:<?= Security::e($text) ?>;--em-primary:<?= Security::e($primary) ?>}</style>
 </head>
-<body class="v8-storefront">
+<body>
 <div id="offline-banner" class="offline-banner" hidden>Sem internet. Seu pedido continua salvo neste aparelho.</div>
 <main class="shell" data-menu-root data-storage-key="<?= Security::e($storageKey) ?>">
 <header class="topbar">
@@ -243,35 +249,40 @@ $cartBackup=array_values(array_map(static fn(array$line):array=>[
 </header>
 
 <section class="hero <?= Security::e($headerStyle) ?><?= $coverUrl!==''?' with-cover':'' ?>">
+    <?php if($coverUrl!==''):?><img class="hero-cover" src="<?= Security::e($coverUrl) ?>" alt="" fetchpriority="high" decoding="async"><?php endif;?>
     <div class="hero-body">
-        <div class="v8-store-intro"><span class="v8-intro-line"></span> SEU MOMENTO DE PEDIR</div>
-        <span class="eyebrow"><?= $table?'PEDIDO NA MESA':'CARDÁPIO DIGITAL · '.Security::e(mb_strtoupper((string)$selectedUnit['name'])) ?></span>
+        <span class="eyebrow"><?= $table?'Pedido na mesa':'Cardápio · '.Security::e(mb_strtoupper((string)$selectedUnit['name'])) ?></span>
         <h1><?= Security::e($title) ?></h1>
         <p><?= Security::e($subtitle) ?></p>
-        <div class="meta"><span class="pill success"><span aria-hidden="true">●</span> Recebendo pedidos</span>
-        <?php if($table):?><span class="pill"><?= Security::e($table['name']) ?></span><span class="pill">Consumo no local</span>
-        <?php else:?><span class="pill">Retirada</span><span class="pill">Delivery</span><?php endif;?></div>
-        <div class="v8-hero-links"><a href="#catalogo" class="v8-browse-menu">Explorar cardápio <span aria-hidden="true">↗</span></a><?php if($cartCount):?><a href="#cart" class="v8-hero-cart">Ver pedido (<?= $cartCount ?>)</a><?php endif;?></div>
+        <div class="meta">
+            <span class="pill success">✓ Pedidos online</span>
+            <?php if($table):?>
+                <span class="pill"><?= Security::e($table['name']) ?></span>
+                <span class="pill">Consumo no local</span>
+            <?php else:?>
+                <span class="pill">Retirada</span>
+                <span class="pill">Delivery</span>
+            <?php endif;?>
+        </div>
+        <div class="commercial-meta">
+            <?php if(!$table):?>
+                <div class="info"><span>Entrega</span><strong><?= $deliveryFee>0?menu_money($deliveryFee):'Consulte no pedido' ?></strong></div>
+                <div class="info"><span>Pedido mínimo</span><strong><?= $minimum>0?menu_money($minimum):'Sem mínimo informado' ?></strong></div>
+            <?php else:?>
+                <div class="info"><span>Atendimento</span><strong><?= Security::e($table['name']) ?></strong></div>
+            <?php endif;?>
+            <div class="info"><span>Unidade</span><strong><?= Security::e((string)$selectedUnit['name']) ?></strong></div>
+            <?php if($unitAddress!==''):?><div class="info"><span>Endereço da loja</span><strong><?= Security::e($unitAddress) ?></strong><?php if($unitMapsUrl!==''):?><a class="menu-map-link" href="<?= Security::e($unitMapsUrl) ?>" target="_blank" rel="noopener">Ver rota no mapa ↗</a><?php endif;?></div><?php endif;?>
+        </div>
         <?php if(!empty($settings['menu_message'])):?><div class="message"><?= Security::e((string)$settings['menu_message']) ?></div><?php endif;?>
     </div>
-    <div class="v8-hero-visual">
-        <?php if($coverUrl!==''):?><img class="hero-cover" src="<?= Security::e($coverUrl) ?>" alt="" fetchpriority="high" decoding="async">
-        <?php else:?><div class="v8-artwork" aria-hidden="true"><div class="v8-art-ring"></div><div class="v8-art-word">FEITO<br>PARA<br>VOCÊ.</div><span class="v8-art-label">ESCOLHA · PEÇA · APROVEITE</span></div><?php endif;?>
-    </div>
 </section>
-<div class="v8-store-facts" aria-label="Informações da loja">
-    <div class="v8-store-fact"><span aria-hidden="true">↗</span><div><small>UNIDADE</small><strong><?= Security::e((string)$selectedUnit['name']) ?></strong></div></div>
-    <?php if(!$table):?><div class="v8-store-fact"><span aria-hidden="true">⌁</span><div><small>ENTREGA</small><strong><?= $deliveryFee>0?menu_money($deliveryFee):'Consulte no pedido' ?></strong></div></div>
-    <div class="v8-store-fact"><span aria-hidden="true">◈</span><div><small>PEDIDO MÍNIMO</small><strong><?= $minimum>0?menu_money($minimum):'Não informado' ?></strong></div></div>
-    <?php else:?><div class="v8-store-fact"><span aria-hidden="true">◈</span><div><small>ATENDIMENTO</small><strong><?= Security::e($table['name']) ?></strong></div></div><?php endif;?>
-    <?php if($unitAddress!==''):?><div class="v8-store-fact v8-address"><span aria-hidden="true">⌖</span><div><small>ENDEREÇO</small><strong><?= Security::e($unitAddress) ?></strong></div></div><?php endif;?>
-</div>
 
 <div data-restore-host></div>
 <?php if($error):?><div class="alert" role="alert"><?= Security::e($error) ?></div><?php endif;?>
 
 <?php if($groups):?>
-<div class="toolbar" id="catalogo" aria-label="Navegação do cardápio"><div class="v8-category-heading"><span>DESCUBRA SEUS FAVORITOS</span><strong>O que vamos pedir hoje?</strong></div>
+<div class="toolbar" aria-label="Navegação do cardápio">
     <div class="toolbar-row">
         <?php if($showSearch):?>
         <label class="search" aria-label="Buscar produtos">
@@ -360,7 +371,7 @@ $cartBackup=array_values(array_map(static fn(array$line):array=>[
 
 <aside class="cart" id="cart" aria-label="Seu pedido">
     <div class="cart-head">
-        <div><div class="v8-cart-icon" aria-hidden="true">◫</div><span class="eyebrow"><?= $table?'Mesa':'Seu pedido' ?></span><h2><?= $cartCount>0?$cartCount.' '.($cartCount===1?'item':'itens'):'Carrinho vazio' ?></h2></div>
+        <div><span class="eyebrow"><?= $table?'Mesa':'Seu pedido' ?></span><h2><?= $cartCount>0?$cartCount.' '.($cartCount===1?'item':'itens'):'Carrinho vazio' ?></h2></div>
         <?php if($cartRows):?>
         <form method="post" data-clear-form>
             <input type="hidden" name="_csrf" value="<?= Security::e(Security::csrfToken()) ?>"><input type="hidden" name="action" value="clear">

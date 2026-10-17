@@ -37,6 +37,25 @@ function em_go(string $route, array $params = []): never
     exit;
 }
 
+/** Encaminha para a seleção de unidade quando uma tela operacional ainda não tem contexto. */
+function em_require_operating_unit(string $backRoute): array
+{
+    try {
+        return (new OperatingUnitService())->requireCurrent();
+    } catch (Throwable $e) {
+        $message = $e->getMessage();
+        $unitMissing = str_contains($message, 'Escolha a unidade de operação no topo do painel')
+            || str_contains($message, 'Escolha a unidade antes de iniciar')
+            || str_contains($message, 'Cadastre uma unidade operacional antes de continuar');
+        if ($unitMissing) {
+            $allowed = ['dashboard','pos','orders','restaurant','cash','kitchen','production','delivery','pickup','reports','units','events','event-admin','tickets','guests','promoters','payments','products','inventory','purchases','customers','communications','coupons','gateways','billing','users','audit','settings','settings-general','media-settings','email-settings'];
+            if (!in_array($backRoute, $allowed, true)) $backRoute = 'dashboard';
+            em_go('unit-context', ['back_route' => $backRoute]);
+        }
+        throw $e;
+    }
+}
+
 function em_slug(string $value): string
 {
     $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value) ?: $value;
@@ -220,8 +239,11 @@ function em_tenant_nav(): array
         ],
         'Clientes / Marketing' => [
             ['customers','Clientes e pontos','customers.manage','◎'],
-            ['communications','Central de Comunicação','settings.manage','✉'],
             ['coupons','Cupons','coupons.manage','%'],
+        ],
+        'WhatsApp / Comunicação' => [
+            ['whatsapp','WhatsApp e Connect','settings.manage','✉'],
+            ['communications','Enviar comunicados','settings.manage','◉'],
         ],
         'Financeiro' => [
             ['payments','Pagamentos','payments.manage','$'],
@@ -240,7 +262,8 @@ function em_tenant_nav(): array
             ['audit','Auditoria','audit.view','◉'],
         ],
         'Configurações' => [
-            ['settings','Empresa e aparência','settings.manage','⚙'],
+            ['settings','Central de configurações','settings.manage','⚙'],
+            ['settings-general','Personalização do cardápio','settings.manage','◇'],
             ['units','Unidades','settings.manage','⌖'],
             ['email-settings','E-mail','email.manage','✉'],
         ],
@@ -257,9 +280,12 @@ function em_platform_nav(): array
             ['marketplace-finance','Financeiro e empresas','platform.manage','$'],
             ['marketplace-coupons','Cupons Delivery','platform.manage','%'],
             ['marketplace-campaigns','Campanhas Delivery','platform.manage','★'],
+            ['delivery-customers','Clientes cadastrados','platform.manage','♙'],
         ],
         'Sistema' => [
             ['system-health','Saúde e alertas','platform.manage','◉'],
+            ['receipt-ads','Publicidade nos cupons','platform.manage','▣'],
+            ['email-settings','E-mail SMTP','email.manage','✉'],
         ],
     ];
 }
@@ -308,7 +334,7 @@ function em_header(string $title, string $active): void
     $brandActive=$brand&&!empty($brand['apply_web']);
     $brandName=$brandActive?trim((string)$brand['display_name']):'';
     $brandName=$brandName!==''?$brandName:($platformMode?'EventMenu Plataforma':'EventMenu Premium');
-    $themeColor=$brandActive?(string)$brand['primary_color']:'#17684f';
+    $themeColor=$brandActive?(string)$brand['primary_color']:'#21134f';
     $primaryInk=em_contrast_ink($themeColor);
     $unitContext=em_operational_unit_context();$units=$unitContext['units'];$currentUnit=$unitContext['current'];
     $homeRoute=$platformMode?'super':'dashboard';
@@ -329,6 +355,7 @@ function em_header(string $title, string $active): void
     <link rel="stylesheet" href="<?= $css ?>"><link rel="stylesheet" href="<?= $premiumCss ?>"><link rel="stylesheet" href="<?= Security::e(app_url('assets/premium-v5.css?v='.em_asset_version('assets/premium-v5.css'))) ?>"><link rel="stylesheet" href="<?= Security::e(app_url('assets/premium-v5-runtime.css?v='.em_asset_version('assets/premium-v5-runtime.css'))) ?>">
     <link rel="stylesheet" href="<?= Security::e(app_url('assets/workspace-v8.css?v='.em_asset_version('assets/workspace-v8.css'))) ?>">
     <link rel="stylesheet" href="<?= Security::e(app_url('assets/workspace-v8-mobilefix.css?v='.em_asset_version('assets/workspace-v8-mobilefix.css'))) ?>">
+    <link rel="stylesheet" href="<?= Security::e(app_url('assets/unit-context-v9-11.css?v='.em_asset_version('assets/unit-context-v9-11.css'))) ?>">
     <script defer src="<?= $premiumJs ?>"></script>
     <?php endif; ?>
     <?php if($brandActive):?><style>
@@ -354,10 +381,13 @@ function em_header(string $title, string $active): void
             <a href="<?= Security::e(app_url('?route=marketplace-finance')) ?>" class="<?= $active==='marketplace-finance'?'active':'' ?>"><span class="saas-ni" aria-hidden="true">◫</span>Financeiro e Delivery</a>
             <a href="<?= Security::e(app_url('?route=marketplace-coupons')) ?>" class="<?= $active==='marketplace-coupons'?'active':'' ?>"><span class="saas-ni" aria-hidden="true">◇</span>Cupons Delivery</a>
             <a href="<?= Security::e(app_url('?route=marketplace-campaigns')) ?>" class="<?= $active==='marketplace-campaigns'?'active':'' ?>"><span class="saas-ni" aria-hidden="true">✳</span>Campanhas</a>
+            <a href="<?= Security::e(app_url('?route=delivery-customers')) ?>" class="<?= $active==='delivery-customers'?'active':'' ?>"><span class="saas-ni" aria-hidden="true">♙</span>Clientes cadastrados</a>
         </nav>
         <div class="saas-nav-label">SISTEMA</div>
         <nav class="nav" aria-label="Sistema">
             <a href="<?= Security::e(app_url('?route=system-health')) ?>" class="<?= $active==='system-health'?'active':'' ?>"><span class="saas-ni" aria-hidden="true">◎</span>Saúde e alertas</a>
+            <a href="<?= Security::e(app_url('?route=receipt-ads')) ?>" class="<?= $active==='receipt-ads'?'active':'' ?>"><span class="saas-ni" aria-hidden="true">▣</span>Publicidade nos cupons</a>
+            <a href="<?= Security::e(app_url('?route=email-settings')) ?>" class="<?= $active==='email-settings'?'active':'' ?>"><span class="saas-ni" aria-hidden="true">✉</span>Configurar e-mail SMTP</a>
         </nav>
     </div>
     <div class="saas-side-foot"><span class="saas-online"><i></i>Sessão autenticada</span><div class="saas-user"><span class="saas-avatar"><?= Security::e(mb_strtoupper(mb_substr(Auth::name(),0,1))) ?></span><div><strong><?= Security::e(Auth::name()) ?></strong><small>Super administrador</small></div></div><a class="saas-logout" href="<?= Security::e(app_url('?route=logout')) ?>">Sair da conta <span aria-hidden="true">↗</span></a></div>
@@ -370,9 +400,9 @@ function em_header(string $title, string $active): void
     <div class="sidebar-head"><a class="brand" href="<?=Security::e(app_url('?route='.$homeRoute))?>"><?php if($brandActive&&!empty($brand['logo_url'])):?><img class="brand-logo" src="<?=Security::e($brand['logo_url'])?>" alt=""><?php else:?><span class="em-brand-emblem" aria-hidden="true"><span class="v8-emblem-square"></span><span class="v8-emblem-square"></span><span class="v8-emblem-square"></span><span class="v8-emblem-square"></span></span><?php endif;?><?=Security::e($brandName)?><?php if($brandActive&&!empty($brand['show_eventmenu_brand'])&&strcasecmp($brandName,'EventMenu Premium')!==0):?><span class="tenant-brand-signature">EventMenu</span><?php elseif(!$brandActive&&!$platformMode):?><span>Premium</span><?php endif;?></a><button type="button" class="nav-toggle" aria-label="Abrir menu" aria-expanded="false"><span></span><span></span><span></span></button></div>
     <?php if($platformMode):?><div class="platform-context"><small>ADMINISTRAÇÃO GERAL</small><strong>EventMenu</strong><span>Plataforma SaaS</span></div><?php elseif($context):?><div class="tenant-context"><small>Empresa em contexto</small><strong><?=Security::e($context)?></strong><?php if($type):?><span><?=Security::e($type)?></span><?php endif;?></div><?php endif;?>
     <nav class="nav">
-    <?php foreach($navGroups as$group=>$items):$visible=[];foreach($items as$item){[$route,$label,$permission,$icon]=$item;if(!em_can_nav($permission))continue;if($currentTenantId&&!TenantFeatures::routeEnabled($route,$currentTenantId)&&!in_array($route,['dashboard','settings','users','units','reports','audit','billing','email-settings'],true))continue;$visible[]=$item;}if(!$visible)continue;?>
+    <?php foreach($navGroups as$group=>$items):$visible=[];foreach($items as$item){[$route,$label,$permission,$icon]=$item;if(!em_can_nav($permission))continue;if($route==='settings-general'&&$currentTenantId&&!TenantFeatures::menu($currentTenantId))continue;if($currentTenantId&&!TenantFeatures::routeEnabled($route,$currentTenantId)&&!in_array($route,['dashboard','settings','users','units','reports','audit','billing','email-settings'],true))continue;$visible[]=$item;}if(!$visible)continue;?>
         <section class="nav-group" aria-label="<?=Security::e($group)?>"><div class="nav-group-title"><?=Security::e($group)?></div>
-        <?php foreach($visible as[$route,$label,$permission,$icon]):?><a data-route="<?=Security::e($route)?>" class="<?=$active===$route?'active':''?>" href="<?=Security::e(app_url('?route='.urlencode($route)))?>"><span class="nav-icon" aria-hidden="true"><?=Security::e($icon)?></span><span><?=Security::e($label)?></span></a><?php endforeach;?>
+        <?php foreach($visible as[$route,$label,$permission,$icon]):?><a data-route="<?=Security::e($route)?>" class="<?=$active===$route?'active':''?>" href="<?=Security::e($route==='whatsapp'?app_url('whatsapp.php'):($route==='settings-general'?app_url('?route=settings-general').'#cardapio':app_url('?route='.urlencode($route))))?>"><span class="nav-icon" aria-hidden="true"><?=Security::e($icon)?></span><span><?=Security::e($label)?></span></a><?php endforeach;?>
         </section>
     <?php endforeach;?>
     </nav>
@@ -387,7 +417,22 @@ function em_header(string $title, string $active): void
 <main class="content">
 <div class="v8-workspace-strip"><div class="v8-breadcrumb"><span>Workspace</span><span class="v8-breadcrumb-separator">/</span><strong><?=Security::e($platformMode?'Administração geral':($context?:'Operação'))?></strong></div><div class="v8-utility"><span class="v8-secure-indicator"><span aria-hidden="true"></span> Sessão protegida</span><?php if(!$platformMode&&em_can_nav('orders.create')):?><a class="v8-quick-order" href="<?=Security::e(app_url('?route=pos'))?>">+ Novo pedido</a><?php endif;?></div></div>
     <header class="topbar"><div class="v8-page-title"><span class="top-eyebrow"><?=$platformMode?'PLATAFORMA':($brandActive?Security::e(mb_strtoupper($brandName)):'PAINEL')?></span><h1><?=Security::e($title)?></h1><div class="muted top-subtitle"><?php if($brandActive&&!empty($brand['tagline'])):?><?=Security::e($brand['tagline'])?><?php else:?><?=$platformMode?'Administração geral do EventMenu':($context?Security::e($context).' · ':'').($type?Security::e($type):'Gestão da empresa')?><?php endif;?><?php if($currentUnit):?> · <strong><?=Security::e($currentUnit['name'])?></strong><?php endif;?></div></div>
-    <div class="topbar-actions"><?php if(count($units)>1):?><form method="post" action="<?=Security::e(app_url('?route=unit-context'))?>" class="unit-switcher"><input type="hidden" name="_csrf" value="<?=em_csrf()?>"><input type="hidden" name="back_route" value="<?=Security::e($active)?>"><label><span>Unidade</span><select name="unit_id" onchange="this.form.submit()"><option value="0"<?=$currentUnit?'':' selected'?>>Escolher unidade</option><?php foreach($units as$unit):?><option value="<?=(int)$unit['id']?>"<?=$currentUnit&&(int)$currentUnit['id']===(int)$unit['id']?' selected':''?>><?=Security::e($unit['name'])?></option><?php endforeach;?></select></label></form><?php elseif($currentUnit):?><span class="context-pill"><?=Security::e($currentUnit['name'])?></span><?php elseif($platformMode):?><span class="context-pill">Super ADM</span><?php elseif($brandActive):?><span class="context-pill"><?=Security::e($brandName)?></span><?php elseif($context):?><span class="context-pill"><?=Security::e($context)?></span><?php endif;?></div></header>
+    <div class="topbar-actions"><?php if(count($units)>1 && (string)($_GET['route']??'')!=='unit-context'):?><form method="post" action="<?=Security::e(app_url('?route=unit-context'))?>" class="unit-switcher"><input type="hidden" name="_csrf" value="<?=em_csrf()?>"><input type="hidden" name="back_route" value="<?=Security::e($active)?>"><label><span>Unidade</span><select name="unit_id" onchange="this.form.submit()"><option value="0"<?=$currentUnit?'':' selected'?>>Escolher unidade</option><?php foreach($units as$unit):?><option value="<?=(int)$unit['id']?>"<?=$currentUnit&&(int)$currentUnit['id']===(int)$unit['id']?' selected':''?>><?=Security::e($unit['name'])?></option><?php endforeach;?></select></label></form><?php elseif($currentUnit):?><span class="context-pill"><?=Security::e($currentUnit['name'])?></span><?php elseif($platformMode):?><span class="context-pill">Super ADM</span><?php elseif($brandActive):?><span class="context-pill"><?=Security::e($brandName)?></span><?php elseif($context):?><span class="context-pill"><?=Security::e($context)?></span><?php endif;?></div></header>
+<?php if(!$platformMode && $currentTenantId && $units && (string)($_GET['route']??'')!=='unit-context' && (count($units)>1 || !$currentUnit)): ?>
+    <div class="mobile-unit-context">
+      <form method="post" action="<?=Security::e(app_url('?route=unit-context'))?>">
+        <input type="hidden" name="_csrf" value="<?=em_csrf()?>">
+        <input type="hidden" name="back_route" value="<?=Security::e($active)?>">
+        <label><span>Unidade de operação</span>
+          <select name="unit_id" required onchange="this.form.submit()">
+            <?php if(!$currentUnit): ?><option value="" selected disabled>Escolha uma unidade para continuar</option><?php endif; ?>
+            <?php foreach($units as $unit): ?><option value="<?=(int)$unit['id']?>"<?=$currentUnit && (int)$currentUnit['id']===(int)$unit['id']?' selected':''?>><?=Security::e($unit['name'])?><?=!empty($unit['address'])?' · '.Security::e($unit['address']):''?></option><?php endforeach; ?>
+          </select>
+        </label>
+        <noscript><button type="submit" class="primary">Aplicar unidade</button></noscript>
+      </form>
+    </div>
+<?php endif; ?>
 <?php endif; ?>
     <?php if($brandActive&&!empty($brand['contrast_adjusted'])):?><div class="alert info" role="status">A cor de texto da empresa foi ajustada automaticamente nesta tela para manter a leitura e o contraste.</div><?php endif;?>
     <?php if($flash):?><div class="alert <?=Security::e($flash[0])?>" role="status"><?=Security::e($flash[1])?></div><?php endif;?>

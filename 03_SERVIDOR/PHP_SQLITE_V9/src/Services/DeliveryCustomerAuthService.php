@@ -24,6 +24,28 @@ final class DeliveryCustomerAuthService
 
     public function verifyEmail(PDO $pdo,string $token): array{$row=$this->consumeToken($pdo,$token,'verify_email');$pdo->prepare('UPDATE delivery_customer_accounts SET email_verified_at=COALESCE(email_verified_at,CURRENT_TIMESTAMP),status="active",updated_at=CURRENT_TIMESTAMP WHERE id=?')->execute([(int)$row['account_id']]);return $this->accountById($pdo,(int)$row['account_id']);}
     public function resendVerification(PDO $pdo,string $email): bool{$email=mb_strtolower(trim($email));if(!filter_var($email,FILTER_VALIDATE_EMAIL))return true;$q=$pdo->prepare('SELECT id,email_verified_at FROM delivery_customer_accounts WHERE email=? LIMIT 1');$q->execute([$email]);$row=$q->fetch();if(!$row||!empty($row['email_verified_at']))return true;$this->sendVerification($pdo,(int)$row['id']);return true;}
+    /**
+     * Reenvio administrativo com feedback real de aceitação pelo SMTP.
+     * Não utiliza a resposta anti-enumeração da API pública e não confirma a conta.
+     * Limita novas tentativas para não invalidar links sucessivamente.
+     */
+    public function resendVerificationFromAdmin(PDO $pdo, int $accountId): bool
+    {
+        if ($accountId < 1) throw new RuntimeException('Cliente inválido.');
+        $q = $pdo->prepare('SELECT id,email_verified_at,status FROM delivery_customer_accounts WHERE id=? LIMIT 1');
+        $q->execute([$accountId]);
+        $account = $q->fetch(PDO::FETCH_ASSOC);
+        if (!$account) throw new RuntimeException('Cliente não encontrado.');
+        if (!empty($account['email_verified_at'])) throw new RuntimeException('O e-mail deste cliente já foi confirmado.');
+        if ((string)$account['status'] === 'blocked') throw new RuntimeException('Não é possível reenviar para uma conta bloqueada.');
+
+        $recent = $pdo->prepare('SELECT id FROM delivery_customer_auth_tokens WHERE account_id=? AND purpose=? AND created_at>=? ORDER BY id DESC LIMIT 1');
+        $recent->execute([$accountId, 'verify_email', gmdate('Y-m-d H:i:s', time() - 60)]);
+        if ($recent->fetchColumn()) throw new RuntimeException('Aguarde pelo menos 1 minuto entre os envios para este cliente.');
+
+        return $this->sendVerification($pdo, $accountId);
+    }
+
     public function login(PDO $pdo,array $payload,string $userAgent='',string $ip=''): array{$email=mb_strtolower(trim((string)($payload['email']??'')));$password=(string)($payload['password']??'');$q=$pdo->prepare('SELECT * FROM delivery_customer_accounts WHERE email=? LIMIT 1');$q->execute([$email]);$row=$q->fetch();if(!$row||!password_verify($password,(string)$row['password_hash']))throw new RuntimeException('E-mail ou senha inválidos.');if(empty($row['email_verified_at']))throw new RuntimeException('Confirme seu e-mail antes de entrar.');if((string)$row['status']!=='active')throw new RuntimeException('Esta conta não está disponível para acesso.');if(password_needs_rehash((string)$row['password_hash'],PASSWORD_DEFAULT))$pdo->prepare('UPDATE delivery_customer_accounts SET password_hash=?,updated_at=CURRENT_TIMESTAMP WHERE id=?')->execute([password_hash($password,PASSWORD_DEFAULT),(int)$row['id']]);$raw=$this->randomToken();$expires=gmdate('Y-m-d H:i:s',time()+60*60*24*30);$device=mb_substr(trim((string)($payload['device_name']??'')),0,160);$pdo->prepare('INSERT INTO delivery_customer_sessions (account_id,token_hash,device_name,user_agent,ip_hash,expires_at) VALUES (?,?,?,?,?,?)')->execute([(int)$row['id'],$this->hashToken($raw),$device?:null,mb_substr($userAgent,0,500)?:null,$ip!==''?hash('sha256',$ip):null,$expires]);return ['access_token'=>$raw,'token_type'=>'Bearer','expires_at'=>$expires,'customer'=>$this->safeAccount($row)];}
     public function authenticate(PDO $pdo,string $rawToken): array{$rawToken=trim($rawToken);if($rawToken==='')throw new RuntimeException('Entre na sua conta para continuar.');$q=$pdo->prepare("SELECT a.*,s.id session_id,s.expires_at FROM delivery_customer_sessions s JOIN delivery_customer_accounts a ON a.id=s.account_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at>CURRENT_TIMESTAMP AND a.status='active' AND a.email_verified_at IS NOT NULL LIMIT 1");$q->execute([$this->hashToken($rawToken)]);$row=$q->fetch();if(!$row)throw new RuntimeException('Sua sessão expirou. Entre novamente.');$pdo->prepare('UPDATE delivery_customer_sessions SET last_seen_at=CURRENT_TIMESTAMP WHERE id=?')->execute([(int)$row['session_id']]);return $row;}
     public function logout(PDO $pdo,string $rawToken): void{if(trim($rawToken)==='')return;$pdo->prepare('UPDATE delivery_customer_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE token_hash=? AND revoked_at IS NULL')->execute([$this->hashToken($rawToken)]);}

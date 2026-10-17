@@ -5,8 +5,9 @@ declare(strict_types=1);
 use EventMenu\Core\Auth;
 use EventMenu\Core\Security;
 use EventMenu\Services\ProductionService;
+use EventMenu\Support\OperationalDiagnostics;
 
-Auth::requirePermission('orders.kitchen');$tenantId=em_require_tenant();$service=new ProductionService();
+Auth::requirePermission('orders.kitchen');$tenantId=em_require_tenant();$unitContext=em_require_operating_unit('kitchen');$service=new ProductionService();
 if($_SERVER['REQUEST_METHOD']==='POST'){
     em_post_csrf();$action=(string)($_POST['action']??'');
     try{
@@ -17,7 +18,19 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }catch(Throwable $e){em_flash('error',$e->getMessage());}
     em_go('kitchen');
 }
-$board=$service->board();$unit=$board['unit'];$stations=$board['stations'];$jobs=$board['jobs'];$queue=$board['print_queue'];$expedition=$service->expedition();$byStation=[];foreach($jobs as$j)$byStation[(int)$j['station_id']][]=$j;$delayed=count(array_filter($jobs,fn($j)=>!empty($j['delayed'])));$preparing=count(array_filter($jobs,fn($j)=>$j['status']==='preparing'));$ready=count(array_filter($jobs,fn($j)=>$j['status']==='ready'));
+try {
+    $board=$service->board();
+    // board() ja sincronizou os pedidos; nao repetir a transacao neste GET.
+    $expedition=$service->expedition(false);
+} catch (Throwable $e) {
+    $safe=OperationalDiagnostics::userFacing($e,'Não foi possível carregar a Cozinha neste momento.','web.kitchen.load');
+    http_response_code(503);
+    em_header('Cozinha / KDS','kitchen');
+    echo '<section class="card"><h2>Cozinha indisponível</h2><p>'.Security::e($safe['message']).'</p><p class="muted">Referência: '.Security::e($safe['reference']).'</p><p>Solicite ao administrador que consulte o error_log usando a referência acima.</p></section>';
+    em_footer();
+    return;
+}
+$unit=$board['unit'];$stations=$board['stations'];$jobs=$board['jobs'];$queue=$board['print_queue'];$byStation=[];foreach($jobs as$j)$byStation[(int)$j['station_id']][]=$j;$delayed=count(array_filter($jobs,fn($j)=>!empty($j['delayed'])));$preparing=count(array_filter($jobs,fn($j)=>$j['status']==='preparing'));$ready=count(array_filter($jobs,fn($j)=>$j['status']==='ready'));
 em_header('Cozinha / KDS','kitchen');
 ?>
 <section class="page-hero"><div><span class="eyebrow">KDS EM TEMPO REAL · <?= Security::e(mb_strtoupper($unit['name'])) ?></span><h2>Produção por estação</h2><p>Cada setor recebe somente os itens da unidade atual. O pedido entra na expedição quando todos os setores envolvidos terminarem.</p></div><div class="actions"><?php if(Auth::can('production.manage')):?><a class="button secondary" href="<?= Security::e(app_url('?route=production')) ?>">Configurar estações</a><?php endif;?></div></section>

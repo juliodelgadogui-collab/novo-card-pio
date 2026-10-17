@@ -1,0 +1,21 @@
+CARDÁPIO V9.9 — HOTFIX DO PAINEL MÓVEL
+
+CORREÇÃO
+A atualização V9.8 substituiu app/admin_helpers.php por uma versão antiga, que não ativava a classe em-saas-v9 nem a estrutura do painel Super ADM. Isso deixava o dashboard sem cartões e sem o layout responsivo esperado.
+
+ESTE HOTFIX
+- Restaura o cabeçalho e a estrutura de navegação do painel Super ADM.
+- Inclui o CSS platform-saas-v9.css necessário para os cartões, gráficos e layout móvel.
+- Preserva o seletor de unidade móvel nas telas das empresas.
+- Não executa migrações nem altera o banco de dados.
+
+INSTALAÇÃO
+1. Envie este ZIP para /home/gestorstore/go.gestao2.store/1/.
+2. Execute o comando de backup e instalação fornecido no chat.
+3. Teste o painel em uma aba anônima ou atualize a página sem cache.
+
+Arquivos do pacote:
+- app/admin_helpers.php
+- public/assets/platform-saas-v9.css
+
+Faça backup dos arquivos atuais antes de sobrescrevê-los.

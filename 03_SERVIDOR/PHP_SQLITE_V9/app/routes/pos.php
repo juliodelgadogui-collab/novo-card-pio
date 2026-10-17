@@ -15,7 +15,7 @@ use EventMenu\Services\StockReservationService;
 
 Auth::requirePermission('orders.create');
 $tenantId=em_require_tenant();
-$unit=(new OperatingUnitService())->requireCurrent();$unitId=(int)$unit['id'];
+$unit=em_require_operating_unit('pos');$unitId=(int)$unit['id'];
 $cartKey='pos_cart_'.$tenantId.'_'.$unitId;
 if(!isset($_SESSION[$cartKey])||!is_array($_SESSION[$cartKey]))$_SESSION[$cartKey]=[];
 $cart=&$_SESSION[$cartKey];$configured=new ConfiguredOrderService();

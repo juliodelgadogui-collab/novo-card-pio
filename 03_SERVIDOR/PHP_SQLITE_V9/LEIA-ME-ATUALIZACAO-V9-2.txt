@@ -1,0 +1,29 @@
+CARDÁPIO V9.2 — SMTP NO MENU + CADASTROS DELIVERY
+
+O QUE MUDA
+- app/admin_helpers.php: acrescenta os atalhos no menu SaaS do Super ADM.
+- public/index.php: registra a rota delivery-customers.
+- app/routes/delivery-customers.php: lista contas de delivery_customer_accounts com busca, filtro e paginação.
+
+INSTALAÇÃO
+1. FAÇA BACKUP dos arquivos atuais e do banco de dados.
+2. Compare public/index.php e app/admin_helpers.php com os arquivos atuais; se tiver ajustes posteriores ao V9.1, mescle as alterações em vez de sobrescrever cegamente.
+3. Extraia este ZIP na raiz da instalação do servidor Cardápio (ex.: public_html/1/), preservando subpastas.
+4. Acesse: /1/?route=email-settings (configurar e-mail da plataforma).
+5. Acesse: /1/?route=delivery-customers (cadastros do aplicativo Delivery).
+6. Atualize a página forçando o cache do navegador, se necessário.
+
+SEGURANÇA
+- Rota permitida somente a super_admin sem empresa em contexto.
+- Somente leitura.
+- Exibe nome, email, telefone e data/status de verificação.
+- Nenhum segredo, CPF, senha ou token exibido.
+- Nenhum banco, .env ou arquivo de cliente incluído.
+
+TESTES
+- Sintaxe PHP e integridade do ZIP verificadas localmente.
+- Não foi feita instalação nem testes de consulta no servidor em produção.
+
+AVISO
+A tela nova consulta a tabela delivery_customer_accounts gerada pelas migrações (SQLite/MySQL).
+A coluna "pendentes" mede email_verified_at IS NULL, independente de contas bloqueadas.

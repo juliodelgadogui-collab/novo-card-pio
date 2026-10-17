@@ -2,7 +2,7 @@
 // instalações no mesmo domínio não apaguem o cache umas das outras.
 const SCOPE_KEY = new URL(self.registration.scope).pathname.replace(/[^a-zA-Z0-9_-]/g, '_');
 const CACHE_PREFIX = `eventmenu-static-${SCOPE_KEY}-`;
-const CACHE_NAME = `${CACHE_PREFIX}v12`;
+const CACHE_NAME = `${CACHE_PREFIX}v10`;
 const MANIFEST_URL = './manifest.webmanifest';
 const STATIC_SUFFIXES = [
   '/assets/app.css',
@@ -10,11 +10,6 @@ const STATIC_SUFFIXES = [
   '/assets/premium-v4.js',
   '/assets/premium-v5.css',
   '/assets/premium-v5-runtime.css',
-  '/assets/workspace-v8.css',
-  '/assets/workspace-v8-mobilefix.css',
-  '/assets/auth-workspace-v8.css',
-  '/assets/storefront-v8.css',
-  '/assets/unit-workspace-v8.css',
   '/assets/menu-premium-v5.css',
   '/assets/menu-premium-v5.js',
   '/assets/order-premium-v5.css',

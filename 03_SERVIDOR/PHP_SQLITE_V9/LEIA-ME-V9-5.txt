@@ -1,0 +1,53 @@
+CARDÁPIO — CORREÇÃO RESPONSIVA COMPARTILHADA V9.5
+Data: 16/10/2026
+
+OBJETIVO
+Corrigir em diversas páginas do painel das EMPRESAS as duas colunas rígidas que
+estavam espremendo formulários e tabelas no celular, além dos cartões inferiores
+do Dashboard e checkboxes esticados.
+
+INSTALAÇÃO
+1) FAÇA BACKUP dos arquivos do servidor e do banco antes da atualização.
+2) Confira que a V9.4 já está instalada e que a folha tenant-mobile-v9-4.css
+   é carregada no painel das empresas.
+3) No cPanel, acesse public_html/1/.
+4) Extraia este ZIP MANTENDO AS PASTAS. Ele inclui duas cópias idênticas:
+   assets/tenant-mobile-v9-4.css
+   public/assets/tenant-mobile-v9-4.css
+   As duas cobrem disposições diferentes da raiz pública no PHP.
+5) Reabra o painel em guia anônima, ou limpe o cache e recarregue o navegador.
+6) Confira que a URL abaixo entrega CSS, não HTML/404:
+   https://go.gestao2.store/1/assets/tenant-mobile-v9-4.css
+7) Teste as páginas: Visão geral, Unidades, Estoque, Produção/Impressão,
+   Pedidos, Eventos, Compras, Clientes, Usuários e demais módulos usados.
+8) Em telas com tabelas extensas, movimente horizontalmente a própria tabela,
+   e não a página inteira.
+
+MUDANÇAS
+- APENAS CSS: nenhum arquivo PHP substituído.
+- Estilos da V9.4 preservados, com novo complemento V9.5 ao final.
+- Força a quebra das grids administrativas rígidas em uma coluna abaixo de
+  950px, incluindo grid-template-columns inline que anulavam a mídia antiga.
+- Define grid real para os 3 atalhos finais de dashboard.
+- Formata corretamente estado vazio de pedidos quando colspan=7.
+- Mantém checkbox 20px ao invés de width:100% aplicável a inputs genéricos.
+- Tabelas de muitos campos roláveis dentro da seção, sem espremer coluna vizinha.
+- Restrito a body.em-premium.em-tenant (não altera Super ADM, loja pública,
+  aplicativos Android, roteamento ou dados dos clientes).
+
+VERIFICAÇÃO REALIZADA LOCALMENTE
+- Testes visuais em navegador Chromium sobre HTML de teste derivado da estrutura
+  real de PHP das páginas Unidades, Estoque, Produção e rodapé do Dashboard.
+- Resoluções testadas: 320, 393, 440, 768 e 1440px (20 cenários).
+- Sem rolagem horizontal no documento de teste; grids em uma coluna até 950px,
+  checkboxes 20px e cards de atalhos em uma coluna no celular.
+- Em desktop de teste, Unidades/Estoque/Produção mantêm duas colunas, os 3
+  atalhos do Dashboard mantêm 3 colunas e a tabela vazia permanece tabela.
+
+LIMITAÇÕES
+- Não foi feito teste autenticado no site de produção; sem acesso direto ao
+  banco/conta de hospedagem.
+- Os testes visuais são representativos, NÃO páginas reais renderizadas pelo PHP.
+- Não é possível afirmar que TODAS as telas administrativas estejam homologadas.
+- Outras falhas específicas de telas ainda poderão exigir correções adicionais.
+- Se instalou modificações de CSS após V9.4, compare o arquivo antes de substituir.

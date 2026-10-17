@@ -1,0 +1,7 @@
+/* Cardápio V9.11 — seletor de unidade operacional no celular */
+body.em-premium .mobile-unit-context{display:block;width:100%;min-width:0;margin:0 0 18px;padding:13px 14px;background:#fff;border:1px solid #dbe7e1;border-radius:12px;box-sizing:border-box;box-shadow:0 5px 18px rgba(20,55,43,.04)}
+body.em-premium .mobile-unit-context form,body.em-premium .mobile-unit-context label{display:grid;gap:8px;min-width:0;width:100%}
+body.em-premium .mobile-unit-context label>span{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#477363}
+body.em-premium .mobile-unit-context select{display:block;width:100%;min-width:0;max-width:100%;min-height:46px;padding:10px 12px;border:1px solid #cbded4;border-radius:9px;background:#fff;color:#173a30;box-sizing:border-box}
+@media(min-width:951px){body.em-premium .mobile-unit-context{display:none}}
+@media(max-width:950px){body.em-premium .topbar-actions{display:none!important}body.em-premium .mobile-unit-context{margin-top:-8px;margin-bottom:20px}}

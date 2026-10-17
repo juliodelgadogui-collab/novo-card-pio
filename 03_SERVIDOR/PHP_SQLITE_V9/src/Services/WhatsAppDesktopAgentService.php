@@ -170,9 +170,24 @@ final class WhatsAppDesktopAgentService
         if(!in_array($type,['image','document'],true))return[];
 
         $url=trim((string)($payload['media_url']??''));
+        $isTicketMedia=(int)($payload['ticket_id']??0)>0;
         $parts=$url!==''?parse_url($url):false;
+        if($isTicketMedia&&$url!==''&&(!is_array($parts)||empty($parts['host']))){
+            $path=is_array($parts)?(string)($parts['path']??''):$url;
+            $query=is_array($parts)?(string)($parts['query']??''):'';
+            $base=\app_base_path();
+            if($base!==''&&str_starts_with($path,$base.'/'))$path=substr($path,strlen($base)+1);
+            $path=ltrim($path,'/');if($query!=='')$path.='?'.$query;
+            $url=\app_absolute_url($path);$parts=parse_url($url);
+        }
         $scheme=is_array($parts)?strtolower((string)($parts['scheme']??'')):'';
         $host=is_array($parts)?trim((string)($parts['host']??'')):'';
+        if($isTicketMedia&&$scheme==='http'&&$host!==''&&!in_array(strtolower($host),['localhost','127.0.0.1','::1'],true)){
+            $parts['scheme']='https';if(isset($parts['port'])&&(int)$parts['port']===80)unset($parts['port']);
+            $authority=(string)$parts['host'].(isset($parts['port'])?':'.(int)$parts['port']:'');
+            $url='https://'.$authority.(string)($parts['path']??'/').(isset($parts['query'])?'?'.$parts['query']:'').(isset($parts['fragment'])?'#'.$parts['fragment']:'');
+            $parts=parse_url($url);$scheme='https';$host=(string)($parts['host']??'');
+        }
         if(!in_array($scheme,['http','https'],true)||$host==='')return[];
 
         $filename=mb_substr(trim((string)($payload['media_filename']??'')),0,190);

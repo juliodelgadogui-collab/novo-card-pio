@@ -58,7 +58,34 @@ function app_url(string $path = ''): string
 function app_absolute_url(string $path = ''): string
 {
     $origin = rtrim((string)env('APP_URL', ''), '/');
-    if ($origin === '') return app_url($path);
+    if ($origin === '') {
+        $host = trim((string)($_SERVER['HTTP_HOST'] ?? ''));
+        $serverName = trim((string)($_SERVER['SERVER_NAME'] ?? ''));
+        if ($host === '' || !preg_match('/^[A-Za-z0-9.-]+(?::[0-9]{1,5})?$/', $host)) $host = $serverName;
+        if ($serverName !== '' && preg_match('/^[A-Za-z0-9.-]+$/', $serverName)) {
+            $hostOnly = strtolower((string)preg_replace('/:[0-9]{1,5}$/', '', $host));
+            if ($hostOnly !== strtolower($serverName)) $host = $serverName;
+        }
+        if ($host === '' || !preg_match('/^[A-Za-z0-9.-]+(?::[0-9]{1,5})?$/', $host)) return app_url($path);
+        $forwarded = strtolower(trim(explode(',', (string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''))[0] ?? ''));
+        $requestScheme = strtolower(trim((string)($_SERVER['REQUEST_SCHEME'] ?? '')));
+        $isLocal = preg_match('/^(localhost|127(?:\.[0-9]{1,3}){3})(?::[0-9]{1,5})?$/i', $host) === 1;
+        if (in_array($forwarded, ['http','https'], true)) $scheme = $forwarded;
+        elseif (in_array($requestScheme, ['http','https'], true)) $scheme = $requestScheme;
+        elseif (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') $scheme = 'https';
+        elseif ((int)($_SERVER['SERVER_PORT'] ?? 0) === 443) $scheme = 'https';
+        else $scheme = $isLocal ? 'http' : 'https';
+        $origin = $scheme . '://' . $host;
+    }
+    $originParts=parse_url($origin);
+    if(is_array($originParts)&&strtolower((string)($originParts['scheme']??''))==='http'&&!empty($originParts['host'])){
+        $hostName=strtolower((string)$originParts['host']);
+        $localHost=in_array($hostName,['localhost','127.0.0.1','::1'],true);
+        $originPort=isset($originParts['port'])?(int)$originParts['port']:null;
+        if(!$localHost&&($originPort===null||$originPort===80)){
+            $origin='https://'.(string)$originParts['host'].(string)($originParts['path']??'');
+        }
+    }
     $base = app_base_path();
     $originPath = (string)(parse_url($origin, PHP_URL_PATH) ?? '');
     if ($base !== '' && !str_ends_with(rtrim($originPath, '/'), $base)) $origin .= $base;

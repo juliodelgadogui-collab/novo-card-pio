@@ -43,11 +43,11 @@ final class WhatsAppCustomerRegistrationService
         if($conversationId<1||$tenantId<1||$phone==='')throw new RuntimeException('Conversa inválida para cadastro.');
         $context=$this->context($conversation['context_json']??null);$normalized=$this->normalize($text);
 
-        if(!in_array($state,self::STATES,true))return $this->begin($pdo,$tenantId,$conversationId,$phone);
+        if(!in_array($state,self::STATES,true)){if(in_array($state,['IDLE','WELCOME'],true)&&$this->looksLikeFullName($text)){$conversation['state']='REGISTER_NAME';$conversation['context_json']=null;return $this->handle($pdo,$tenantId,$conversation,$text);}return $this->begin($pdo,$tenantId,$conversationId,$phone);}
 
         if($state==='REGISTER_NAME'){
-            $name=mb_substr(trim($text),0,160);
-            if(mb_strlen($name)<2||ctype_digit($name))return $this->stateResult($pdo,$tenantId,$conversationId,'REGISTER_NAME',$context,"Para fazer seu cadastro, informe seu *nome completo*.\n\nExemplo: Maria da Silva",'registration_name_invalid');
+            $name=mb_substr(trim($text),0,160);$nameParts=preg_split('/\s+/u',$name,-1,PREG_SPLIT_NO_EMPTY)?:[];
+            if(mb_strlen($name)<2||ctype_digit($name)||count($nameParts)<2||preg_match('/[0-9]/u',$name))return $this->stateResult($pdo,$tenantId,$conversationId,'REGISTER_NAME',$context,"Para fazer seu cadastro, informe seu *nome completo, com nome e sobrenome*.\n\nExemplo: Maria da Silva",'registration_name_invalid');
             $customer=$this->identity->findOrCreate($pdo,$tenantId,$name,$phone);$customerId=(int)$customer['id'];$this->bindConversation($pdo,$tenantId,$conversationId,$customerId);
             if(!empty($context['registration_edit']))return $this->confirmation($pdo,$tenantId,$conversationId,$phone,$customerId);
             return $this->nextMissing($pdo,$tenantId,$conversationId,$phone,$customerId);
@@ -77,7 +77,7 @@ final class WhatsAppCustomerRegistrationService
             if($normalized!=='1'&&!in_array($normalized,['confirmar','confirmo','ok'],true))return $this->confirmation($pdo,$tenantId,$conversationId,$phone,$customerId,'Digite *1* para confirmar ou *2* para corrigir seus dados.');
             $customer=$this->customer($pdo,$tenantId,$customerId);if(!$this->profileComplete($customer))return $this->nextMissing($pdo,$tenantId,$conversationId,$phone,$customerId);
             $this->audit('registration_completed',$conversationId,$customerId);
-            return $this->stateResult($pdo,$tenantId,$conversationId,'WELCOME',[],"✅ *Cadastro concluído!*\n\nSeu telefone do WhatsApp ficou vinculado ao cadastro e o CPF será reutilizado quando o pagamento via PIX precisar dele.\n\nSe escolher entrega, o endereço será solicitado e ficará salvo para os próximos pedidos.\n\nComo posso ajudar?\n\n1 - Fazer um pedido\n2 - Repetir último pedido\n3 - Acompanhar pedido\n4 - Falar com atendente",'registration_completed',['registration_complete'=>true,'customer_id'=>$customerId]);
+            return $this->stateResult($pdo,$tenantId,$conversationId,'WELCOME',[],"✅ *Cadastro concluído!*\n\nSeu telefone do WhatsApp ficou vinculado ao cadastro e o CPF será reutilizado quando o pagamento via PIX precisar dele.\n\nSe escolher entrega, o endereço será solicitado e ficará salvo para os próximos pedidos.\n\nComo posso ajudar?\n\n1 - Fazer um pedido\n2 - Repetir último pedido\n3 - Acompanhar pedido\n4 - Falar com atendente\n5 - Comprar ingresso",'registration_completed',['registration_complete'=>true,'customer_id'=>$customerId]);
         }
 
         if($state==='REGISTER_EDIT'){
@@ -164,6 +164,20 @@ final class WhatsAppCustomerRegistrationService
     private function context(mixed $raw):array
     {
         if(!is_string($raw)||trim($raw)==='')return[];$data=json_decode($raw,true);return is_array($data)?$data:[];
+    }
+
+    private function looksLikeFullName(string $value):bool
+    {
+        $value=trim($value);
+        if($value===''||mb_strlen($value)>160||preg_match('/[0-9]/u',$value))return false;
+        if(!preg_match('/^[\p{L}\p{M}][\p{L}\p{M} .\'’\-]{1,158}$/u',$value))return false;
+        $normalized=mb_strtolower(preg_replace('/\s+/u',' ',$value)??$value);
+        $blocked=['oi','ola','olá','bom dia','boa tarde','boa noite','menu','ajuda','atendente','quero','fazer','pedido','comprar','ingresso','ingressos','evento','eventos','ver','ticket','tickets','bilhete','bilhetes','entrega','retirada','acompanhar','cancelar','repetir','ultimo','último','meu','sim','nao','não'];
+        if(in_array($normalized,$blocked,true))return false;
+        $parts=preg_split('/\s+/u',$value,-1,PREG_SPLIT_NO_EMPTY)?:[];
+        if(count($parts)<2)return false;
+        foreach($parts as$part){if(!preg_match('/^[\p{L}\p{M}][\p{L}\p{M}\'’\-]*$/u',$part))return false;if(in_array(mb_strtolower($part),$blocked,true))return false;}
+        return true;
     }
 
     private function normalize(string $text):string

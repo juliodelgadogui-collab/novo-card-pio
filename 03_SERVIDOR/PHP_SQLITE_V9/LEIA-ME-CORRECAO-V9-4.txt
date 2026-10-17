@@ -1,0 +1,42 @@
+CARDÁPIO V9.4 — CORREÇÃO RESPONSIVA DO PAINEL DAS EMPRESAS
+Data: 16/10/2026
+
+OBJETIVO
+Corrigir estrutura de cartões operacionais, métricas, gráfico de vendas, canais de pedidos,
+formulário de eventos e menu móvel em telas estreitas. Não alterar Super ADM, aplicativos,
+consultas a banco de dados, pagamentos, pedidos, campanhas, contas ou cadastros.
+
+CONTEÚDO DO ZIP
+- app/admin_helpers.php                (base V9.2 + 1 link CSS, preservando SMTP/clientes)
+- app/routes/dashboard.php            (melhoria do gráfico de 0 vendas e barras reais)
+- assets/tenant-mobile-v9-4.css       (acesso direto do seu site /1/assets/)
+- public/assets/tenant-mobile-v9-4.css (acesso via pasta public, se aplicável)
+- LEIA-ME-CORRECAO-V9-4.txt
+
+ANTES DE INSTALAR
+1. Faça backup do site, de app/admin_helpers.php e app/routes/dashboard.php.
+2. Seu app/admin_helpers.php deve conter as alterações V9.2 (clientes cadastrados e SMTP).
+   Este ZIP usa aquela base, mas NÃO incluiu eventuais edições feitas depois no seu servidor.
+   Se você fez mais alterações nele, FAÇA MERGE em vez de sobrescrever o arquivo.
+3. Nenhum arquivo .env, banco SQLite ou pasta storage deve ser modificado.
+
+INSTALAÇÃO PELO CPANEL
+1. Entre em public_html/1/.
+2. Envie o ZIP e extraia mantendo a estrutura de diretórios.
+3. Confira o CSS público: https://go.gestao2.store/1/assets/tenant-mobile-v9-4.css
+   Deve retornar TEXTO CSS, não 404 nem HTML.
+4. No Chrome, feche todas as abas antigas do site e abra uma nova. Se necessário, limpe
+   os dados em cache do site (CUIDADO: isso pode exigir novo login).
+5. Confira especialmente as rotas dashboard e events&new=1 em celular.
+
+ARQUIVOS TESTADOS
+- PHP lint: admin_helpers.php e dashboard.php, sem erros.
+- Prévia HTML isolada: viewport 320, 393, 440 e 1440 px, sem overflow horizontal.
+- Grid de atenção e canal; menu abre/fecha; gráfico também testado com dados ilustrativos.
+
+LIMITAÇÕES
+- Prévia isolada não equivale a teste do servidor PHP em produção. Não foi realizado
+  teste de autenticação, pedidos, SMTP, banco SQLite ou infraestrutura real nesta entrega.
+- O seletor nativo de unidades do Android abre uma janela do sistema operacional; não
+  é controlado pela folha CSS. O campo dentro do formulário foi limitado à largura móvel.
+- Se houver CSS personalizado ativo no site, verificar conflitos após atualização.

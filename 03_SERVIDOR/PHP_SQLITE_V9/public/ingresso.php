@@ -110,7 +110,37 @@ header('Referrer-Policy: no-referrer');
 <div class="foot"><?= $showEventMenu?'Tecnologia EventMenu':Security::e($tagline!==''?$tagline:$brandName) ?></div>
 </main>
 <?php if($entryEnabled):?><script>
-(()=>{'use strict';const data={event:<?=json_encode((string)$ticket['event_name'],JSON_UNESCAPED_UNICODE)?>,subtitle:<?=json_encode($subtitle,JSON_UNESCAPED_UNICODE)?>,date:<?=json_encode(ticket_friendly_datetime((string)$ticket['starts_at']),JSON_UNESCAPED_UNICODE)?>,venue:<?=json_encode((string)($ticket['venue']??''),JSON_UNESCAPED_UNICODE)?>,address:<?=json_encode((string)($ticket['address']??''),JSON_UNESCAPED_UNICODE)?>,holder:<?=json_encode($customer,JSON_UNESCAPED_UNICODE)?>,type:<?=json_encode($typeName,JSON_UNESCAPED_UNICODE)?>,batch:<?=json_encode((string)$ticket['batch_name'],JSON_UNESCAPED_UNICODE)?>,code:<?=json_encode((string)$ticket['code'],JSON_UNESCAPED_UNICODE)?>,status:<?=json_encode(ticket_status_label((string)$ticket['status']),JSON_UNESCAPED_UNICODE)?>,banner:<?=json_encode($banner,JSON_UNESCAPED_SLASHES)?>,primary:<?=json_encode($primary)?>,secondary:<?=json_encode($secondary)?>};const status=document.getElementById('action-status');function msg(v){if(status)status.textContent=v}function rounded(ctx,x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}function wrap(ctx,text,x,y,max,width,lineHeight){const words=String(text||'').split(/\s+/);let line='',lines=0;for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>width&&line){ctx.fillText(line,x,y+lines*lineHeight,max);line=word;lines++}else line=test}if(line){ctx.fillText(line,x,y+lines*lineHeight,max);lines++}return lines}async function optionalBanner(ctx){if(!data.banner)return false;try{const r=await fetch(data.banner,{mode:'cors',credentials:'omit',cache:'force-cache'});if(!r.ok)throw new Error();const blob=await r.blob(),url=URL.createObjectURL(blob),img=new Image();await new Promise((ok,fail)=>{img.onload=ok;img.onerror=fail;img.src=url});const ratio=Math.max(1080/img.width,470/img.height),w=img.width*ratio,h=img.height*ratio;ctx.drawImage(img,(1080-w)/2,(470-h)/2,w,h);URL.revokeObjectURL(url);return true}catch(_){return false}}async function qrImage(){const svg=document.querySelector('#ticket-qr svg');if(!svg)return null;const source=new XMLSerializer().serializeToString(svg),url=URL.createObjectURL(new Blob([source],{type:'image/svg+xml'})),img=new Image();try{await new Promise((ok,fail)=>{img.onload=ok;img.onerror=fail;img.src=url});return{img,url}}catch(_){URL.revokeObjectURL(url);return null}}async function makeImage(){const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1600;const ctx=canvas.getContext('2d');const grad=ctx.createLinearGradient(0,0,1080,500);grad.addColorStop(0,data.secondary);grad.addColorStop(1,data.primary);ctx.fillStyle=grad;ctx.fillRect(0,0,1080,500);const hasBanner=await optionalBanner(ctx);if(hasBanner){const shade=ctx.createLinearGradient(0,0,0,500);shade.addColorStop(0,'rgba(10,8,25,.08)');shade.addColorStop(1,'rgba(10,8,25,.88)');ctx.fillStyle=shade;ctx.fillRect(0,0,1080,500)}ctx.fillStyle='#fff';ctx.font='900 28px system-ui';ctx.fillText('SEU INGRESSO',70,305);ctx.font='900 64px system-ui';wrap(ctx,data.event,70,365,940,940,70);if(data.subtitle){ctx.font='500 28px system-ui';wrap(ctx,data.subtitle,70,455,940,940,36)}ctx.fillStyle='#f7f7fb';ctx.fillRect(0,500,1080,1100);ctx.fillStyle='#201d2b';ctx.font='800 33px system-ui';ctx.fillText(data.date,70,580);ctx.font='500 26px system-ui';ctx.fillStyle='#645f6f';wrap(ctx,[data.venue,data.address].filter(Boolean).join(' · '),70,625,940,940,34);ctx.fillStyle='#ebe7f7';rounded(ctx,70,705,940,125,24);ctx.fillStyle=data.primary;ctx.font='900 25px system-ui';ctx.fillText((data.type+' · '+data.batch).toUpperCase(),100,757);ctx.fillStyle='#201d2b';ctx.font='900 34px system-ui';ctx.fillText(data.holder,100,802);const qr=await qrImage();if(qr){ctx.fillStyle='#fff';rounded(ctx,305,875,470,470,28);ctx.drawImage(qr.img,330,900,420,420);URL.revokeObjectURL(qr.url)}ctx.textAlign='center';ctx.fillStyle='#645f6f';ctx.font='600 24px ui-monospace,monospace';ctx.fillText(data.code,540,1390);ctx.fillStyle=data.status==='Válido'?'#17623a':data.primary;ctx.font='900 26px system-ui';ctx.fillText(data.status.toUpperCase(),540,1442);ctx.fillStyle='#77717f';ctx.font='500 21px system-ui';ctx.fillText('Apresente o QR na entrada · ingresso individual',540,1495);ctx.fillText('Tecnologia EventMenu',540,1540);return canvas}document.getElementById('save-ticket')?.addEventListener('click',async()=>{msg('Gerando imagem…');try{const canvas=await makeImage(),a=document.createElement('a');a.download='ingresso-'+String(data.code).replace(/[^a-zA-Z0-9_-]/g,'')+'.png';a.href=canvas.toDataURL('image/png',1);a.click();msg('Imagem do ingresso gerada.')}catch(e){msg('Não foi possível gerar a imagem agora. O ingresso continua disponível nesta tela.')}});document.getElementById('share-ticket')?.addEventListener('click',async()=>{const share={title:'Ingresso — '+data.event,text:data.event+' · '+data.date,url:location.href};try{if(navigator.share){await navigator.share(share);msg('Ingresso compartilhado.')}else{await navigator.clipboard.writeText(location.href);msg('Link do ingresso copiado.')}}catch(e){if(e?.name!=='AbortError')msg('Não foi possível compartilhar agora.')}})})();
+(()=>{'use strict';
+const data={
+  code:<?=json_encode((string)$ticket['code'],JSON_UNESCAPED_UNICODE)?>,
+  event:<?=json_encode((string)$ticket['event_name'],JSON_UNESCAPED_UNICODE)?>,
+  date:<?=json_encode(ticket_friendly_datetime((string)$ticket['starts_at']),JSON_UNESCAPED_UNICODE)?>,
+  imageUrl:<?=json_encode(app_absolute_url('ingresso-imagem.php?t='.rawurlencode($token).'&ticket_id='.(int)$ticket['id']),JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE)?>
+};
+const status=document.getElementById('action-status');
+function msg(value){if(status)status.textContent=value;}
+function safeCode(value){return String(value||'').replace(/[^a-zA-Z0-9_-]/g,'');}
+const saveButton=document.getElementById('save-ticket');
+saveButton?.addEventListener('click',async()=>{
+  saveButton.disabled=true;msg('Preparando a imagem oficial do ingresso…');
+  try{
+    const response=await fetch(data.imageUrl,{credentials:'same-origin',cache:'no-store'});
+    if(!response.ok)throw new Error('HTTP '+response.status);
+    const blob=await response.blob();
+    if(!blob.type.toLowerCase().startsWith('image/png'))throw new Error('A resposta não é uma imagem PNG.');
+    const objectUrl=URL.createObjectURL(blob);const link=document.createElement('a');
+    link.download='ingresso-'+safeCode(data.code)+'.png';link.href=objectUrl;document.body.appendChild(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(objectUrl),1500);
+    msg('Imagem oficial do ingresso salva. O WhatsApp usa exatamente este mesmo arquivo.');
+  }catch(error){msg('Não foi possível baixar a imagem agora. O ingresso continua disponível nesta tela.');}
+  finally{saveButton.disabled=false;}
+});
+document.getElementById('share-ticket')?.addEventListener('click',async()=>{
+  const share={title:'Ingresso — '+data.event,text:data.event+' · '+data.date,url:location.href};
+  try{if(navigator.share){await navigator.share(share);msg('Ingresso compartilhado.');}else{await navigator.clipboard.writeText(location.href);msg('Link do ingresso copiado.');}}
+  catch(error){if(error?.name!=='AbortError')msg('Não foi possível compartilhar agora.');}
+});
+})();
 </script><?php endif;?>
 </body>
 </html>

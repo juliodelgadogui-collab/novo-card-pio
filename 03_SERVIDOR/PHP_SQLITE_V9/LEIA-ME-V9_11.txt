@@ -1,0 +1,49 @@
+CARDÁPIO V9.11 — CORREÇÃO DA UNIDADE, ERRO 500 E LAYOUT MOBILE
+
+Este hotfix foi preparado a partir dos registros enviados do servidor e das capturas de tela.
+
+Correções incluídas:
+1. Corrige app/routes/unit-context.php: remove a chamada à função inexistente em_nav(), que causava HTTP 500 ao trocar de unidade.
+2. Cria uma página própria para escolher a unidade, acessível por GET e POST.
+3. Quando PDV, Pedidos, Mesas, Caixa, Cozinha, Produção ou Entregas precisam de unidade e nenhuma foi escolhida, encaminha o usuário à tela de seleção em vez de gerar erro fatal.
+4. Exibe o seletor de unidade de forma legível no celular.
+5. Corrige o layout de Mesas e Comandas para empilhar o formulário e o mapa de mesas em telas estreitas.
+6. Corrige o layout mobile da visão geral do evento, mantendo os botões e a navegação.
+7. Remove a chamada inexistente em_flash_render() da página de configurações do Delivery; as mensagens já são renderizadas por em_header().
+8. Usa o app/admin_helpers.php do V9.10 como base para preservar os botões restaurados (WhatsApp, Connect, comunicados, personalização, clientes e SMTP).
+
+Arquivos incluídos:
+- app/admin_helpers.php
+- app/routes/unit-context.php
+- app/routes/pos.php
+- app/routes/restaurant.php
+- app/routes/orders.php
+- app/routes/cash.php
+- app/routes/production.php
+- app/routes/delivery.php
+- app/routes/kitchen.php
+- app/routes/event-admin.php
+- public/assets/platform-saas-v9.css
+- public/assets/unit-context-v9-11.css
+- public/delivery-settings.php
+
+INSTALAÇÃO SEGURA
+1. Envie o ZIP para /home/gestorstore/go.gestao2.store/1/.
+2. Antes de extrair, faça backup dos arquivos atuais. Exemplo no terminal:
+
+cd "$HOME/go.gestao2.store/1" || exit
+BACKUP="$HOME/backup_v9_11_$(date +%Y%m%d_%H%M%S)"
+mkdir -p "$BACKUP"
+for f in app/admin_helpers.php app/routes/unit-context.php app/routes/pos.php app/routes/restaurant.php app/routes/orders.php app/routes/cash.php app/routes/production.php app/routes/delivery.php app/routes/kitchen.php app/routes/event-admin.php public/assets/platform-saas-v9.css public/assets/unit-context-v9-11.css public/delivery-settings.php; do
+  if [ -f "$f" ]; then mkdir -p "$BACKUP/$(dirname "$f")"; cp -p "$f" "$BACKUP/$f"; fi
+done
+
+3. Extraia o ZIP na raiz do projeto, mantendo os caminhos dos arquivos.
+4. Rode a validação de sintaxe:
+
+for f in app/admin_helpers.php app/routes/unit-context.php app/routes/pos.php app/routes/restaurant.php app/routes/orders.php app/routes/cash.php app/routes/production.php app/routes/delivery.php app/routes/kitchen.php app/routes/event-admin.php public/delivery-settings.php; do php -l "$f" || exit 1; done
+
+5. Atualize o site no celular. Se o seletor não aparecer no painel, abra diretamente:
+?route=unit-context&back_route=pos
+
+Observação: o pacote passou por validação de sintaxe PHP neste ambiente. A confirmação final depende da instalação e de um teste real no servidor. Não altera o banco de dados nem apaga pedidos.

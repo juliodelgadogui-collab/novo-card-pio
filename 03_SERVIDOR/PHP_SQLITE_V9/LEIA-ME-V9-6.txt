@@ -1,0 +1,24 @@
+CARDÁPIO V9.6 — Correções identificadas em código local + error_log de 16/10/2026
+
+ARQUIVOS ALTERADOS
+- public/delivery-settings.php: remove chamada inexistente em_flash_render(); a funcao em_header() ja imprime o flash.
+- app/admin_helpers.php: torna WhatsApp/Connect, Comunicações e Personalização do Cardápio acessíveis no menu da empresa, respeitando permissões e módulos ativos.
+- app/routes/kitchen.php: protege carregamento inicial do quadro KDS e registra erro tecnico via OperationalDiagnostics no error_log com referência curta.
+- app/routes/delivery.php: protege consulta de entregas e registra erro tecnico via OperationalDiagnostics no error_log com referência curta.
+
+IMPORTANTE
+- O error_log enviado confirma SOMENTE o erro fatal de delivery-settings.php, nao Cozinha ou Entregas.
+- KDS e Entregas receberam instrumentação de diagnóstico, NAO uma correção comprovada de sua causa raiz.
+- WhatsApp/Comunicações permanecem sujeitos a settings.manage e ao modulo whatsapp habilitado em Configuração de módulos da empresa. Nao desative essas protecoes.
+- Personalização permanece no modulo catalogo, em ?route=settings-general#cardapio.
+- Login, pagamentos, endpoints e banco nao foram alterados.
+- Este ZIP e para comparar e atualizar arquivos selecionados; NAO substitui o servidor inteiro.
+
+INSTALAÇÃO COM BACKUP
+1. Faça backup dos arquivos atuais e do banco. Compare os quatro arquivos locais com os do ZIP antes de sobrescrever, especialmente alterações feitas depois da V9.5.
+2. Extraia mantendo caminhos relativos, na raiz correta do site (ex.: public_html/1/). Verifique que public/delivery-settings.php exista no mesmo caminho que o error_log mostrou.
+3. Faça uma recarga real da pagina sem cache.
+4. Teste ?route=kitchen, ?route=delivery, ?route=communications, ?route=settings-general#cardapio, e whatsapp.php sob uma conta autorizada.
+5. Se Cozinha/Entregas mostrarem uma REFERÊNCIA ou erro 403, envie a referencia/codigo e o trecho correspondente do novo error_log; isso permite corrigir a causa raiz.
+
+VERIFICAÇÃO: php -l executado nos quatro arquivos; nao houve teste de runtime em banco real nem de instalacao em hospedagem.

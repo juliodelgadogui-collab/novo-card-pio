@@ -1,0 +1,54 @@
+CARDÁPIO V9.3 — AÇÕES EM CLIENTES DELIVERY
+
+PRÉ-REQUISITO
+A tela "Clientes cadastrados" da V9.2 deve estar funcionando em:
+  /1/?route=delivery-customers
+
+O QUE FOI IMPLEMENTADO
+1) Reenviar confirmação de e-mail diretamente da ficha do cliente.
+   - Usa o serviço de autenticação original para gerar link de verificação por 24 h.
+   - Não confirma e-mail manualmente.
+   - Bloqueia reenvios em até 60 segundos e contas bloqueadas/confirmadas.
+   - Exibe aceitação pelo SMTP, não garantia de entrega final.
+2) Enviar cupom existente para um cliente específico pelo SMTP da plataforma.
+   - Somente conta ativa, e-mail confirmado e marketing_opt_in=1.
+   - Lista cupons gerais válidos que já estão ativos em alguma loja.
+   - O código enviado NÃO é exclusivo nem reservado para aquele cliente.
+   - Reenvio do mesmo código para o mesmo cliente bloqueado por 24 h via auditoria.
+   - A validação de desconto continua acontecendo no checkout original.
+3) Consultar pedidos feitos pela conta do aplicativo Delivery.
+   - Relacionamento delivery_customer_order_links -> orders.
+   - Mostra loja, status, pagamento, total, data e itens do pedido.
+   - Não permite editar pagamentos nem o estado do pedido.
+   - Paginação e conferência de propriedade para cada pedido.
+
+ARQUIVOS ALTERADOS (APENAS 2)
+  app/routes/delivery-customers.php
+  src/Services/DeliveryCustomerAuthService.php
+
+INSTALAÇÃO
+1. Faça backup dos dois arquivos correspondentes no servidor e do banco.
+2. Entre no cPanel > Gerenciador de arquivos > public_html/1/.
+3. Envie este ZIP e extraia nessa raiz, preservando a estrutura de diretórios.
+4. Acesse /1/?route=delivery-customers e abra a ficha de um cliente.
+5. Verifique um cliente pendente, um ativo com autorização de marketing e um sem autorização.
+6. Use uma conta de teste para reenvio de confirmação e um cupom de teste sincronizado.
+7. Confira pedidos do cliente em conta de teste e verifique que outra conta não vê esses pedidos.
+
+IMPORTANTE: Não substitua public/index.php ou app/admin_helpers.php por versões antigas.
+A V9.3 é incremental sobre a V9.2 e preserva o menu em produção.
+Não inclui .env, banco, chaves nem configurações SMTP.
+
+LIMITE DO ENVIO DE CUPONS
+O painel envia um código existente por e-mail; isso NÃO personaliza ou limita o uso do cupom
+àquela pessoa. O botão exige autorização promocional. Para cupom individual, é necessária
+uma futura integração de resgate vinculado a account_id (com regra no checkout).
+
+COMO DESFAZER
+Restaure os dois PHP de backup; nenhuma migração SQL foi adicionada.
+
+VERIFICAÇÕES LOCAIS
+- php -l aplicado aos dois arquivos: sem erros de sintaxe.
+- Consultas SQL de vínculo de pedidos e cupom testadas em SQLite temporário.
+- ZIP testado quanto à integridade.
+- Não houve teste real de SMTP, navegação na hospedagem ou envio de cupons para clientes.

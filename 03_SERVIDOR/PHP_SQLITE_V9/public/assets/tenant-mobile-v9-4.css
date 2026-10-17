@@ -1,0 +1,386 @@
+/* Cardápio V9.4: estrutura responsiva do painel das empresas.
+ * Folha carregada APÓS app.css, premium-v4/v5, workspace-v8 e workspace-v8-mobilefix.
+ * Somente body.em-premium.em-tenant: Super ADM isolado.
+ */
+body.em-premium.em-tenant,
+body.em-premium.em-tenant .layout,
+body.em-premium.em-tenant .content{min-width:0;box-sizing:border-box}
+body.em-premium.em-tenant .content > *{max-width:100%;min-width:0}
+
+/* Atenção agora: as versões anteriores definem o espaçamento, mas não o display/grid.
+   Elementos <a> deixam de se sobrepor e passam a ocupar áreas próprias. */
+body.em-premium.em-tenant .attention-grid{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:12px!important;width:100%;align-items:stretch;margin:0 0 18px;
+}
+body.em-premium.em-tenant .attention-card{
+  box-sizing:border-box;display:flex!important;justify-content:space-between;align-items:center;
+  width:100%;min-width:0;min-height:103px!important;padding:16px 18px!important;
+  overflow:hidden;isolation:isolate;text-align:left;
+}
+body.em-premium.em-tenant .attention-card>div{
+  min-width:0;width:100%;display:flex;flex-direction:column;gap:5px;
+}
+body.em-premium.em-tenant .attention-card span{
+  display:block!important;position:static!important;font-size:13px!important;
+  line-height:1.4!important;overflow-wrap:break-word;
+}
+body.em-premium.em-tenant .attention-card strong{
+  display:block!important;position:static!important;font-size:30px!important;line-height:1.15!important;
+  font-weight:800!important;white-space:normal;
+}
+body.em-premium.em-tenant .attention-dot{flex:0 0 8px;width:8px;height:8px;border-radius:50%;margin:0 0 auto 8px}
+
+/* Visão geral: métricas sempre dentro do próprio cartão. */
+body.em-premium.em-tenant .dashboard-metrics{
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important;
+}
+body.em-premium.em-tenant .dashboard-metric{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;overflow:hidden}
+body.em-premium.em-tenant .dashboard-metric>.muted,
+body.em-premium.em-tenant .dashboard-metric>small{display:block;position:static;line-height:1.4!important}
+body.em-premium.em-tenant .dashboard-metric>strong{display:block;position:static;max-width:100%;line-height:1.2!important}
+
+/* Módulos financeiros: sem layout definido o navegador empilha <article>, <div>, <span>
+   e transforma os percentuais height inline do gráfico em retângulos verdes. */
+body.em-premium.em-tenant .dashboard-grid{
+  display:grid!important;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)!important;
+  gap:14px!important;align-items:stretch;max-width:100%;
+}
+body.em-premium.em-tenant .dashboard-grid>.card{min-width:0;overflow:hidden}
+body.em-premium.em-tenant .dashboard-grid .section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+body.em-premium.em-tenant .dashboard-grid .section-head>div{min-width:0}
+body.em-premium.em-tenant .dashboard-chart .chart-bars{
+  display:flex!important;flex-flow:row nowrap;align-items:flex-end;
+  position:relative;box-sizing:border-box;width:100%;height:220px!important;
+  min-height:220px!important;max-height:220px!important;
+  padding:30px 10px 31px!important;gap:clamp(8px,1.5vw,20px);
+  border-bottom:1px solid #edf2ef;
+}
+body.em-premium.em-tenant .dashboard-chart .chart-bar{
+  display:block!important;position:relative!important;flex:1 1 0;min-width:0;
+  min-height:5px;max-height:100%;border-radius:7px 7px 2px 2px;
+  background:#269775!important;box-sizing:border-box;
+}
+body.em-premium.em-tenant .dashboard-chart .chart-bar>span{
+  position:absolute!important;top:auto!important;bottom:-27px!important;left:50%!important;
+  transform:translateX(-50%)!important;font-size:11px!important;color:#637b78!important;
+  font-weight:650!important;line-height:1.2!important;white-space:nowrap;
+  background:transparent!important;
+}
+/* Os 8 rótulos monetários que o JS antigo insere se sobrepõem em telas estreitas.
+   O valor continua disponível no atributo title de cada barra. */
+body.em-premium.em-tenant .dashboard-chart .chart-bar>.em-chart-value{
+  display:none!important;
+}
+body.em-premium.em-tenant .dashboard-chart .chart-empty{
+  display:grid;place-items:center;min-height:185px;padding:20px;
+  text-align:center;color:#607b75;font-size:14px;line-height:1.45;
+  border:1px dashed #d9e7e0;border-radius:12px;background:#f8fbf9;
+}
+body.em-premium.em-tenant .channel-list{display:grid!important;gap:14px!important;width:100%;margin-top:18px}
+body.em-premium.em-tenant .channel-row{
+  display:grid!important;grid-template-columns:minmax(92px,1fr) minmax(60px,2fr) 42px;
+  gap:10px!important;align-items:center;min-width:0;font-size:13px!important;color:#274542;
+}
+body.em-premium.em-tenant .channel-row>span{display:block;min-width:0;overflow-wrap:break-word;line-height:1.35}
+body.em-premium.em-tenant .channel-row>strong{text-align:right;font-variant-numeric:tabular-nums}
+body.em-premium.em-tenant .channel-track{
+  display:block!important;height:9px!important;min-width:0;width:100%;border-radius:99px;
+  overflow:hidden;background:#edf3ef;
+}
+body.em-premium.em-tenant .channel-fill{height:100%!important;max-width:100%;border-radius:inherit;background:#269775!important}
+
+/* Tabelas de pedidos podem virar cartões no celular, sem larguras do desktop. */
+body.em-premium.em-tenant .table-wrap{min-width:0;max-width:100%}
+body.em-premium.em-tenant .responsive-table table{max-width:100%}
+body.em-premium.em-tenant .responsive-table td{overflow-wrap:anywhere}
+
+@media(max-width:1050px){
+  body.em-premium.em-tenant .attention-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  body.em-premium.em-tenant .dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  body.em-premium.em-tenant .dashboard-grid{grid-template-columns:minmax(0,1fr)!important}
+}
+@media(max-width:950px){
+  body.em-premium.em-tenant{overflow-x:hidden}
+  body.em-premium.em-tenant .layout,
+  body.em-premium.em-tenant .content{width:100%;max-width:100%;min-width:0}
+  body.em-premium.em-tenant .sidebar:not(.nav-open){visibility:hidden;pointer-events:none}
+  body.em-premium.em-tenant .sidebar.nav-open{visibility:visible;pointer-events:auto}
+  body.em-premium.em-tenant.menu-open{overflow:hidden}
+  body.em-premium.em-tenant.menu-open .content{pointer-events:none}
+  body.em-premium.em-tenant.menu-open .v8-sidebar-scrim{pointer-events:auto;display:block!important}
+  body.em-premium.em-tenant .v8-mobile-bar{box-sizing:border-box;max-width:100%;overflow:hidden}
+  body.em-premium.em-tenant .v8-mobile-brand{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.em-premium.em-tenant .page-hero>*{min-width:0}
+  body.em-premium.em-tenant .page-hero .hero-actions{max-width:100%}
+  body.em-premium.em-tenant .dashboard-metrics{margin-top:14px!important}
+  body.em-premium.em-tenant .section-head{max-width:100%;min-width:0}
+  body.em-premium.em-tenant :is(.form-grid,.metric-grid,.dashboard-grid){max-width:100%;min-width:0}
+  body.em-premium.em-tenant :is(.form-grid,.metric-grid,.dashboard-grid)>*{min-width:0}
+  body.em-premium.em-tenant .form-grid label,
+  body.em-premium.em-tenant .form-grid .span-2{min-width:0;max-width:100%}
+  body.em-premium.em-tenant input,
+  body.em-premium.em-tenant select,
+  body.em-premium.em-tenant textarea{box-sizing:border-box;max-width:100%;min-width:0}
+  body.em-premium.em-tenant select{white-space:nowrap;text-overflow:ellipsis}
+}
+@media(max-width:600px){
+  body.em-premium.em-tenant .content{padding:78px 14px 36px!important}
+  body.em-premium.em-tenant .attention-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  body.em-premium.em-tenant .attention-card{min-height:96px!important;padding:13px 14px!important;gap:6px}
+  body.em-premium.em-tenant .attention-card span{font-size:12px!important}
+  body.em-premium.em-tenant .attention-card strong{font-size:27px!important}
+  body.em-premium.em-tenant .dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  body.em-premium.em-tenant .dashboard-metric{min-height:135px!important;padding:15px!important}
+  body.em-premium.em-tenant .dashboard-metric strong{font-size:clamp(20px,5vw,27px)!important}
+  body.em-premium.em-tenant .dashboard-grid>.card{padding:16px!important}
+  body.em-premium.em-tenant .dashboard-grid .section-head{margin:0 0 14px!important;gap:7px}
+  body.em-premium.em-tenant .dashboard-grid .section-head h2{font-size:20px!important;line-height:1.2!important}
+  body.em-premium.em-tenant .dashboard-chart .chart-bars{height:205px!important;min-height:205px!important;max-height:205px!important;padding:32px 8px 31px!important;gap:8px}
+  body.em-premium.em-tenant .dashboard-chart .chart-bar>span{font-size:10px!important}
+  body.em-premium.em-tenant .channel-row{grid-template-columns:minmax(80px,1.3fr) minmax(50px,1fr) 36px;gap:8px!important;font-size:12px!important}
+  body.em-premium.em-tenant .section-head{gap:10px}
+  body.em-premium.em-tenant .section-head>.button{flex:0 0 auto;max-width:100%}
+  body.em-premium.em-tenant .responsive-table,.em-premium.em-tenant .responsive-table table,
+  body.em-premium.em-tenant .responsive-table tbody,
+  body.em-premium.em-tenant .responsive-table tr{width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+  body.em-premium.em-tenant .responsive-table tr{overflow:hidden}
+  body.em-premium.em-tenant .responsive-table td{display:grid!important;grid-template-columns:minmax(74px,.45fr) minmax(0,1fr)!important;gap:8px}
+  body.em-premium.em-tenant .form-grid{grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
+  body.em-premium.em-tenant .form-grid>.span-2{grid-column:1 / -1}
+  body.em-premium.em-tenant .form-grid input,
+  body.em-premium.em-tenant .form-grid select,
+  body.em-premium.em-tenant .form-grid textarea{width:100%!important;font-size:16px!important}
+  body.em-premium.em-tenant .form-grid select{min-height:48px;max-width:100%;text-overflow:ellipsis}
+  body.em-premium.em-tenant .form-grid .actions{display:flex;flex-wrap:wrap;gap:10px}
+  body.em-premium.em-tenant .form-grid .actions>*{max-width:100%;min-height:44px}
+  body.em-premium.em-tenant .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  body.em-premium.em-tenant .metric-card{min-width:0;overflow:hidden}
+  body.em-premium.em-tenant .metric-card strong{font-size:clamp(18px,5vw,25px)!important;overflow-wrap:anywhere}
+}
+@media(max-width:350px){
+  body.em-premium.em-tenant .content{padding-inline:10px!important}
+  body.em-premium.em-tenant .channel-row{grid-template-columns:minmax(74px,1fr) minmax(35px,1fr) 32px;gap:5px!important}
+  body.em-premium.em-tenant .chart-bar>span{font-size:9px!important}
+}
+
+
+/* Cardápio tenant responsive V9.5 — 16/10/2026.
+ * Correction for server-rendered administrative screens.
+ * Append AFTER tenant-mobile-v9-4.css. This stylesheet does not apply to
+ * Super ADM, storefronts, or client-facing Delivery/Android apps.
+ */
+
+body.em-premium.em-tenant .content,
+body.em-premium.em-tenant .content .card,
+body.em-premium.em-tenant .content .grid,
+body.em-premium.em-tenant .content .form-grid,
+body.em-premium.em-tenant .content .metric-grid,
+body.em-premium.em-tenant .content .table-wrap {
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+}
+body.em-premium.em-tenant .content .card,
+body.em-premium.em-tenant .content .grid > *,
+body.em-premium.em-tenant .content .metric-grid > * {
+  min-width:0;
+}
+body.em-premium.em-tenant .content .card :is(h1,h2,h3,h4,p,strong,small,.muted) {
+  overflow-wrap:break-word;
+}
+
+/* Dashboard: the last three links were not assigned a grid layout. */
+body.em-premium.em-tenant .content .quick-grid {
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  align-items:stretch;
+  gap:14px!important;
+  margin:16px 0 26px;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+}
+body.em-premium.em-tenant .content .quick-grid > .quick-card {
+  display:flex!important;
+  flex-direction:column;
+  gap:8px;
+  min-width:0!important;
+  max-width:100%;
+  padding:16px!important;
+  text-decoration:none;
+  overflow-wrap:anywhere;
+  overflow:hidden;
+  white-space:normal;
+}
+body.em-premium.em-tenant .content .quick-card > strong,
+body.em-premium.em-tenant .content .quick-card > span {
+  display:block!important;
+  position:static!important;
+  max-width:100%;
+  line-height:1.5;
+}
+
+/* Avoid form controls changing the size of parent columns. */
+body.em-premium.em-tenant .content .form-grid > :is(label,section,div,details,fieldset),
+body.em-premium.em-tenant .content .table-wrap > *,
+body.em-premium.em-tenant .content .section-head > * {
+  min-width:0;
+  max-width:100%;
+}
+body.em-premium.em-tenant .content .form-grid :is(input,select,textarea):not([type="checkbox"]):not([type="radio"]){
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+}
+body.em-premium.em-tenant .content label.checkbox {
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:10px!important;
+  min-width:0;
+  max-width:100%;
+  white-space:normal;
+  line-height:1.4;
+  overflow-wrap:break-word;
+}
+body.em-premium.em-tenant .content label.checkbox input[type="checkbox"],
+body.em-premium.em-tenant .content label.checkbox input[type="radio"] {
+  display:inline-block!important;
+  flex:0 0 20px!important;
+  width:20px!important;
+  min-width:20px!important;
+  max-width:20px!important;
+  height:20px!important;
+  min-height:20px!important;
+  margin:0!important;
+  padding:0!important;
+  accent-color:#16785a;
+}
+
+/* Keep wide tables scrollable within their cards, never squeeze into a 60px strip. */
+body.em-premium.em-tenant .content .table-wrap:not(.responsive-table){
+  overflow-x:auto!important;
+  overscroll-behavior-x:contain;
+  max-width:100%;
+  -webkit-overflow-scrolling:touch;
+}
+body.em-premium.em-tenant .content .table-wrap:not(.responsive-table) .table{
+  width:max-content;
+  min-width:100%;
+  max-width:none;
+}
+body.em-premium.em-tenant .content :is(.table-wrap,.responsive-table,.card) table :is(th,td){
+  overflow-wrap:normal;
+}
+
+@media (max-width:1050px){
+  body.em-premium.em-tenant .content .quick-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+
+@media (max-width:950px){
+/* The "empty orders" row has one colspan cell, not seven data-label cells. */
+body.em-premium.em-tenant .content .responsive-table tbody tr:has(>td[colspan]){
+  display:block!important;
+  width:100%!important;
+  max-width:100%;
+}
+body.em-premium.em-tenant .content .responsive-table tbody td[colspan]{
+  display:block!important;
+  width:100%!important;
+  max-width:100%;
+  padding:18px!important;
+  text-align:left;
+  font-size:14px!important;
+  grid-template-columns:none!important;
+  white-space:normal;
+}
+body.em-premium.em-tenant .content .responsive-table tbody td[colspan]::before{
+  content:none!important;
+  display:none!important;
+}
+
+
+  /* ~40 server routes use inline grid-template-columns (Units, Inventory,
+     Production, Coupons, Purchases, Events, Users, Tickets, etc.). Inline
+     style overrides ordinary mobile CSS; !important is required here. */
+  body.em-premium.em-tenant .content .grid:not(.dashboard-metrics),
+  body.em-premium.em-tenant .content .grid[style*="grid-template-columns"]:not(.dashboard-metrics),
+  body.em-premium.em-tenant .content :is(.admin-two-col,.product-admin-grid,.commercial-grid,.settings-layout,.settings-side,.order-action-grid,.support-shell,.guest-layout,.ticket-layout){
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  body.em-premium.em-tenant .content .grid:not(.dashboard-metrics){
+    width:100%;
+    min-width:0;
+    max-width:100%;
+  }
+  body.em-premium.em-tenant .content .grid:not(.dashboard-metrics)>*{
+    width:100%;
+    min-width:0!important;
+    max-width:100%;
+    margin-inline:0;
+  }
+  /* The mobile card/field layout of these admin forms must remain a single
+     column even where a route's inline style requests 2 or 3 columns. */
+  body.em-premium.em-tenant .content .form-grid {
+    grid-template-columns:minmax(0,1fr)!important;
+    min-width:0;
+  }
+  body.em-premium.em-tenant .content .form-grid > .span-2{
+    grid-column:1/-1!important;
+  }
+  body.em-premium.em-tenant .content .form-grid label.checkbox{
+    grid-column:1/-1;
+    width:100%;
+  }
+  body.em-premium.em-tenant .content :is(input,select,textarea){
+    font-size:16px;
+  }
+  body.em-premium.em-tenant .content .card :is(p,small,label){
+    overflow-wrap:break-word;
+  }
+  body.em-premium.em-tenant .content .quick-grid{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  body.em-premium.em-tenant .content .page-hero{
+    max-width:100%;
+  }
+  body.em-premium.em-tenant .content .section-head{
+    min-width:0;
+    max-width:100%;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  body.em-premium.em-tenant .content .section-head>.actions{
+    max-width:100%;
+  }
+  /* Prevent modal dialogs and edit forms from retaining desktop widths. */
+  body.em-premium.em-tenant .content form[style*="min-width"],
+  body.em-premium.em-tenant .content details[style*="min-width"],
+  body.em-premium.em-tenant .content .inline-plan-form{
+    min-width:0!important;
+    max-width:100%!important;
+  }
+}
+
+@media (max-width:620px){
+  body.em-premium.em-tenant .content .card{
+    padding:16px!important;
+  }
+  body.em-premium.em-tenant .content .quick-grid .quick-card{
+    padding:17px!important;
+    min-height:0;
+  }
+  body.em-premium.em-tenant .content .quick-grid .quick-card strong{
+    font-size:15px!important;
+  }
+  body.em-premium.em-tenant .content .quick-grid .quick-card span{
+    font-size:13px!important;
+  }
+  body.em-premium.em-tenant .content .section-head :is(h1,h2,h3){
+    white-space:normal;
+  }
+}
